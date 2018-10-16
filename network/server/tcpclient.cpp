@@ -206,10 +206,27 @@ void TcpClient::process_raw_data(const void *data, int len)
             }
 
         } else if(value["subtype"] == "set_tag_info") {
+            LREP("set tag info\n");
             if(value["tag_id"].isInt()) {
                 int tag = value["tag_id"].asInt();
+                if(tag >= 8 || tag < 0) {
+                    ERR("tag number \n");
+                    return;
+                }
+                smsg = value["data"];
                 user_config cfg = app::userconfig::instance()->get_user_config();
-
+                cfg.tag[tag + 12].enable = smsg["ebable"].asBool();
+                cfg.tag[tag + 12].user_name = smsg["sw"].asString();
+                cfg.tag[tag + 12].unit = smsg["unit"].asString();
+                cfg.tag[tag + 12].pin_calib = smsg["calib"].asString();
+                cfg.tag[tag + 12].pin_error = smsg["error"].asString();
+                cfg.tag[tag + 12].min = smsg["min"].asDouble();
+                cfg.tag[tag + 12].max = smsg["max"].asDouble();
+                cfg.tag[tag + 12].coefficient = smsg["coeff"].asDouble();
+                cfg.tag[tag + 12].start = smsg["start"].asDouble();
+                app::userconfig::instance()->save_user_config(cfg);
+            } else {
+                LREP("tag id not number\n");
             }
         } else if(value["subtype"] == "system_reboot") {
             sync();
