@@ -215,7 +215,7 @@ void TcpClient::process_raw_data(const void *data, int len)
                 }
                 smsg = value["data"];
                 user_config cfg = app::userconfig::instance()->get_user_config();
-                cfg.tag[tag + 12].enable = smsg["ebable"].asBool();
+                cfg.tag[tag + 12].enable = smsg["enable"].asBool();
                 cfg.tag[tag + 12].user_name = smsg["sw"].asString();
                 cfg.tag[tag + 12].unit = smsg["unit"].asString();
                 cfg.tag[tag + 12].pin_calib = smsg["calib"].asString();
@@ -224,7 +224,12 @@ void TcpClient::process_raw_data(const void *data, int len)
                 cfg.tag[tag + 12].max = smsg["max"].asDouble();
                 cfg.tag[tag + 12].coefficient = smsg["coeff"].asDouble();
                 cfg.tag[tag + 12].start = smsg["start"].asDouble();
+                cfg.tag[tag + 12].tag_desc = smsg["desc"].asString();
+                cfg.tag[tag + 12].lim_min = smsg["lim_min"].asDouble();
+                cfg.tag[tag + 12].lim_max = smsg["lim_max"].asDouble();
+
                 app::userconfig::instance()->save_user_config(cfg);
+                send_status_message("set_tag_info", "success", "set tag successful");
             } else {
                 LREP("tag id not number\n");
             }
@@ -434,6 +439,9 @@ void TcpClient::send_tag_info(int tag)
     value["max"] = config.tag[tag + 12].max;
     value["coeff"] = config.tag[tag + 12].coefficient;
     value["start"] = config.tag[tag + 12].start;
+    value["desc"] = config.tag[tag + 12].tag_desc;
+    value["lim_min"] = config.tag[tag + 12].lim_min;
+    value["lim_max"] = config.tag[tag + 12].lim_max;
     root["data"] = value;
 
     std::cout << root << std::endl;

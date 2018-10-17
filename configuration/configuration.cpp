@@ -127,6 +127,9 @@ bool userconfig::load_config()
             def.start           = 0;
             def.pin_calib       = "BoardIO:DI.0";
             def.pin_error       = "BoardIO:DI.1";
+            def.tag_desc        = "Mô tả thông số";
+            def.lim_max         = 1000;
+            def.lim_min         = 0;
             load_tag_config("3.TAG_AI_" + std::to_string(i - 12), config_.tag[i], def);
         }
 
@@ -149,7 +152,7 @@ void userconfig::write_file()
         file.open(file_name_, std::ios::out);
         if(file.is_open()) {
             writer.write(file,root_);
-            std::cout << root_;
+            //std::cout << root_;
             file.close();
             LREP("file saved to: {}\n", file_name_);
             is_save_ = false;
@@ -177,6 +180,9 @@ void userconfig::load_tag_config(const std::string &type, io_name_bind &tag, io_
         tag.start           = value["6.start"].asDouble();
         tag.pin_calib       = value["7.pin_calib"].asString();
         tag.pin_error       = value["8.pin_error"].asString();
+        tag.tag_desc        = value["9.tag_desc"].asString();
+        tag.lim_min         = value["10.lim_min"].asDouble();
+        tag.lim_max         = value["11.lim_max"].asDouble();
     } else {
         value["0.enable"]         = def_val.enable;
         value["1.hw_name"]        = def_val.hw_name;
@@ -188,6 +194,9 @@ void userconfig::load_tag_config(const std::string &type, io_name_bind &tag, io_
         value["6.start"]          = def_val.start;
         value["7.pin_calib"]      = def_val.pin_calib;
         value["8.pin_error"]      = def_val.pin_error;
+        value["9.tag_desc"]      = def_val.tag_desc;
+        value["10.lim_min"]      = def_val.lim_min;
+        value["11.lim_max"]      = def_val.lim_max;
         root_[type]               = value;
         tag                       = def_val;
         is_save_ = true;
@@ -208,6 +217,9 @@ void userconfig::save_tag_config(const std::string &type, io_name_bind tag)
     value["6.start"]          = tag.start;
     value["7.pin_calib"]      = tag.pin_calib;
     value["8.pin_error"]      = tag.pin_error;
+    value["9.tag_desc"]      = tag.tag_desc;
+    value["10.lim_min"]      = tag.lim_min;
+    value["11.lim_max"]      = tag.lim_max;
     root_[type]               = value;
     is_save_ = true;
 }

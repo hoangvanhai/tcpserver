@@ -41,6 +41,12 @@ struct io_name_bind {
     std::string unit;
     std::string pin_calib;
     std::string pin_error;
+    std::string tag_desc;
+    double      lim_min;
+    double      lim_max;
+    double      CO2;
+    double      Temp;
+    double      Press;
     double      min;
     double      max;
     double      coefficient;
