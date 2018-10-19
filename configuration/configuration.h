@@ -34,23 +34,42 @@ struct ftp_file_name {
     std::string tentram;
 };
 
+enum StdCondType {
+    Type_None = 0,
+    Type_O2 = 1,
+    Type_TempPress,
+};
+
 struct io_name_bind {
     bool        enable;
+    bool        report;
+    StdCondType final_type;
+
+    std::string tag_desc;
     std::string hw_name;
     std::string user_name;
-    std::string unit;
+    std::string inter_unit;
+    std::string final_unit;
     std::string pin_calib;
     std::string pin_error;
-    std::string tag_desc;
-    double      lim_min;
-    double      lim_max;
-    double      CO2;
-    double      Temp;
-    double      Press;
-    double      min;
-    double      max;
-    double      coefficient;
-    double      start;
+    std::string ai_o2;
+    std::string ai_temp;
+    std::string ai_press;
+
+
+    double      ai_o2_comp;
+    double      ai_temp_comp;
+    double      ai_press_comp;
+
+    double      rang_min;
+    double      rang_max;
+    double      raw_min;
+    double      raw_max;
+    double      coef_a;
+    double      coef_b;
+    double      raw_value;
+    double      inter_value;
+    double      final_value;
 };
 
 struct user_config{    

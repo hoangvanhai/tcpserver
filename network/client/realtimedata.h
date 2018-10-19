@@ -9,9 +9,10 @@ struct RealtimeValue{
     bool        enable;
     std::string hw_name;
     std::string sw_name;
-    std::string raw_value;
+    std::string inter_value;
     std::string final_value;
-    std::string unit;
+    std::string inter_unit;
+    std::string final_unit;
     std::string status;
 };
 class RealtimeData : public lib::pattern::singleton<RealtimeData>
@@ -25,7 +26,7 @@ public:
     }
 
     void add_point_value(const app::io_name_bind &tag);
-    bool set_raw_value(const std::string &hw_name, double value);
+    bool set_inter_value(const std::string &hw_name, double value);
     bool set_final_value(const std::string &hw_name, double value);
     bool set_status(const std::string &hw_name, const std::string &status);
 

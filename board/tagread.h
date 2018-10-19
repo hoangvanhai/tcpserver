@@ -40,34 +40,45 @@ public:
     tagread(io_name_bind config);
 
     ~tagread();    
-    bool read_value(DC_TAG &value);
     void tag_close();
 
     std::string get_hw_name()   const {return io_bind_.hw_name;}
     std::string get_usr_name()  const {return io_bind_.user_name;}
-    std::string get_tag_unit()  const {return io_bind_.unit;}
-    double  get_tag_coeff()      const {return io_bind_.coefficient;}
-    double  get_tag_min()       const {return io_bind_.min;}
-    double  get_tag_max()       const {return io_bind_.max;}
-    bool    get_tag_enable()    const {return io_bind_.enable;}
-    void    set_tag_enable(bool en) {io_bind_.enable = en;}
-    void    set_tag_min(double min) {io_bind_.min = min;}
-    void    set_tag_max(double max) {io_bind_.max = max;}
-    double  get_tag_start() const {return io_bind_.start;}
-    double  get_tag_avg_value();
+    std::string get_tag_inter_unit()  const {return io_bind_.inter_unit;}
+    std::string get_tag_final_unit()  const {return io_bind_.final_unit;}
+
+    double  get_o2_comp() const {return io_bind_.ai_o2_comp;}
+    double  get_temp_comp() const {return io_bind_.ai_temp_comp;}
+    double  get_press_comp() const {return io_bind_.ai_press_comp;}
+
+    std::string get_o2_comp_hw_name() const {return io_bind_.ai_o2;}
+    std::string   get_temp_comp_hw_name() const {return io_bind_.ai_temp;}
+    std::string   get_press_comp_hw_name() const {return io_bind_.ai_press;}
+
+    double  get_inter_value();
+    bool    get_raw_value();
+    bool    get_tag_enable()    const {return io_bind_.enable;}        
+    bool    get_tag_report()    const {return io_bind_.report;}
+
+
+    void    cal_inter_value_avg();
+    double  get_inter_value_avg();
+
+
     std::string get_tag_pin_calib() const {return io_bind_.pin_calib;}
     std::string get_tag_pin_error() const {return io_bind_.pin_error;}
-    double  get_tag_value();
-    void    get_tag_value(DC_TAG &value) {value = value_;}
-    double get_tag_final_value();
+
+    int     get_final_cal_type() const {return io_bind_.final_type;}
 
 private:
     io_name_bind    io_bind_;
     DC_TAG_HANDLE   handle_;
     DC_TAG          value_;     // raw value
-    double          final_value_;
-    double          value_avg_;
+    double          inter_value_avg_;
+    double          inter_value_total_;
     int             read_times_;
+    double          range_raw;
+    double          range_cal;
 };
 
 
@@ -84,9 +95,11 @@ public:
 
 
     bool add_tag(io_name_bind config);
-    bool get_user_tag_value(const std::string &name, DC_TAG &value);
-    bool get_hw_tag_value(const std::string &name, DC_TAG &value);
-    void get_all_tag_value();
+    bool get_inter_value_by_username(const std::string &name, double &value);
+    bool get_inter_value_avg_by_username(const std::string &name, double &value);
+    bool get_inter_value_avg_by_hwname(const std::string &name, double &value);
+    bool get_raw_value_by_hwname(const std::string &name, double &value);
+    void scan_all_raw_inter_avg_value();
     std::vector<std::shared_ptr<tagread>> get_tag_list() {return tag_list_;}
     std::vector<std::shared_ptr<tagread>>  tag_list_;
 

@@ -215,18 +215,18 @@ void TcpClient::process_raw_data(const void *data, int len)
                 }
                 smsg = value["data"];
                 user_config cfg = app::userconfig::instance()->get_user_config();
-                cfg.tag[tag + 12].enable = smsg["enable"].asBool();
-                cfg.tag[tag + 12].user_name = smsg["sw"].asString();
-                cfg.tag[tag + 12].unit = smsg["unit"].asString();
-                cfg.tag[tag + 12].pin_calib = smsg["calib"].asString();
-                cfg.tag[tag + 12].pin_error = smsg["error"].asString();
-                cfg.tag[tag + 12].min = smsg["min"].asDouble();
-                cfg.tag[tag + 12].max = smsg["max"].asDouble();
-                cfg.tag[tag + 12].coefficient = smsg["coeff"].asDouble();
-                cfg.tag[tag + 12].start = smsg["start"].asDouble();
-                cfg.tag[tag + 12].tag_desc = smsg["desc"].asString();
-                cfg.tag[tag + 12].lim_min = smsg["lim_min"].asDouble();
-                cfg.tag[tag + 12].lim_max = smsg["lim_max"].asDouble();
+//                cfg.tag[tag + 12].enable = smsg["enable"].asBool();
+//                cfg.tag[tag + 12].user_name = smsg["sw"].asString();
+//                cfg.tag[tag + 12].unit = smsg["unit"].asString();
+//                cfg.tag[tag + 12].pin_calib = smsg["calib"].asString();
+//                cfg.tag[tag + 12].pin_error = smsg["error"].asString();
+//                cfg.tag[tag + 12].min = smsg["min"].asDouble();
+//                cfg.tag[tag + 12].max = smsg["max"].asDouble();
+//                cfg.tag[tag + 12].coefficient = smsg["coeff"].asDouble();
+//                cfg.tag[tag + 12].start = smsg["start"].asDouble();
+//                cfg.tag[tag + 12].tag_desc = smsg["desc"].asString();
+//                cfg.tag[tag + 12].lim_min = smsg["lim_min"].asDouble();
+//                cfg.tag[tag + 12].lim_max = smsg["lim_max"].asDouble();
 
                 app::userconfig::instance()->save_user_config(cfg);
                 send_status_message("set_tag_info", "success", "set tag successful");
@@ -366,13 +366,13 @@ void TcpClient::send_realtime_data()
     root["type"] = "realtime_data";
     for(auto &var : vect) {
         Json::Value value;
-        value["enable"] = var.enable;
-        value["hw"] = var.hw_name;
-        value["sw"] = var.sw_name;
-        value["raw"] = var.raw_value;
-        value["final"] = var.final_value;
-        value["unit"] = var.unit;
-        value["status"] = var.status;
+//        value["enable"] = var.enable;
+//        value["hw"] = var.hw_name;
+//        value["sw"] = var.sw_name;
+//        value["raw"] = var.raw_value;
+//        value["final"] = var.final_value;
+//        value["unit"] = var.unit;
+//        value["status"] = var.status;
         array.append(value);
     }
 
@@ -400,16 +400,16 @@ void TcpClient::send_config_all_tag()
 
     for(int i = 0; i < 2; i++) {
         Json::Value value;
-        value["enable"] = config.tag[i].enable;
-        value["hw"] = config.tag[i].hw_name;
-        value["sw"] = config.tag[i].user_name;
-        value["unit"] = config.tag[i].unit;
-        value["calib"] = config.tag[i].pin_calib;
-        value["error"] = config.tag[i].pin_error;
-        value["min"] = config.tag[i].min;
-        value["max"] = config.tag[i].max;
-        value["coeff"] = config.tag[i].coefficient;
-        value["start"] = config.tag[i].start;
+//        value["enable"] = config.tag[i].enable;
+//        value["hw"] = config.tag[i].hw_name;
+//        value["sw"] = config.tag[i].user_name;
+//        value["unit"] = config.tag[i].unit;
+//        value["calib"] = config.tag[i].pin_calib;
+//        value["error"] = config.tag[i].pin_error;
+//        value["min"] = config.tag[i].min;
+//        value["max"] = config.tag[i].max;
+//        value["coeff"] = config.tag[i].coefficient;
+//        value["start"] = config.tag[i].start;
         array.append(value);
     }
 
@@ -429,19 +429,19 @@ void TcpClient::send_tag_info(int tag)
     root["subtype"] = "get_tag_info";
     root["tag_id"] = tag;
 
-    value["enable"] = config.tag[tag + 12].enable;
-    value["hw"] = config.tag[tag + 12].hw_name;
-    value["sw"] = config.tag[tag + 12].user_name;
-    value["unit"] = config.tag[tag + 12].unit;
-    value["calib"] = config.tag[tag + 12].pin_calib;
-    value["error"] = config.tag[tag + 12].pin_error;
-    value["min"] = config.tag[tag + 12].min;
-    value["max"] = config.tag[tag + 12].max;
-    value["coeff"] = config.tag[tag + 12].coefficient;
-    value["start"] = config.tag[tag + 12].start;
-    value["desc"] = config.tag[tag + 12].tag_desc;
-    value["lim_min"] = config.tag[tag + 12].lim_min;
-    value["lim_max"] = config.tag[tag + 12].lim_max;
+//    value["enable"] = config.tag[tag + 12].enable;
+//    value["hw"] = config.tag[tag + 12].hw_name;
+//    value["sw"] = config.tag[tag + 12].user_name;
+//    value["unit"] = config.tag[tag + 12].unit;
+//    value["calib"] = config.tag[tag + 12].pin_calib;
+//    value["error"] = config.tag[tag + 12].pin_error;
+//    value["min"] = config.tag[tag + 12].min;
+//    value["max"] = config.tag[tag + 12].max;
+//    value["coeff"] = config.tag[tag + 12].coefficient;
+//    value["start"] = config.tag[tag + 12].start;
+//    value["desc"] = config.tag[tag + 12].tag_desc;
+//    value["lim_min"] = config.tag[tag + 12].lim_min;
+//    value["lim_max"] = config.tag[tag + 12].lim_max;
     root["data"] = value;
 
     std::cout << root << std::endl;

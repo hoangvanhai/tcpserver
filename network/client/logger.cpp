@@ -111,31 +111,29 @@ std::string Logger::get_current_time_cont()
 void Logger::read_tag_value()
 {
     //LREP("\r\nread tag: ");
-    tag_man_->get_all_tag_value();
+    tag_man_->scan_all_raw_inter_avg_value();
     for(auto &var : tag_man_->tag_list_) {
         if(var->get_hw_name().find("BoardIO:AI") != std::string::npos &&
-                var->get_tag_enable()) {
-            var->get_tag_value();
+                var->get_tag_report()) {
 
             double value_calib, value_error;
-            DC_TAG value;
-            std::string status = "";
+            double value;
+            std::string status = "N/A";
             if(var->get_tag_pin_calib() != "" &&
                     var->get_tag_pin_error() != "")
             {
-                if(!tag_man_->get_hw_tag_value(
+                if(!tag_man_->get_raw_value_by_hwname(
                             var->get_tag_pin_calib(),
                             value)) {
                     return;
                 }
-                value_calib = value.value;
-                if(!tag_man_->get_hw_tag_value(
+                value_calib = value;
+                if(!tag_man_->get_raw_value_by_hwname(
                             var->get_tag_pin_error(),
                             value)) {
                     return;
                 }
-                value_error = value.value;
-
+                value_error = value;
 
                 if(value_error > 0) {
                     status = "02";
@@ -148,44 +146,43 @@ void Logger::read_tag_value()
                 }
             }
 
-            app::RealtimeData::instance()->set_raw_value(
-                        var->get_hw_name(), var->get_tag_value());
-            app::RealtimeData::instance()->set_final_value(
-                        var->get_hw_name(), var->get_tag_final_value());
-            app::RealtimeData::instance()->set_status(
-                        var->get_hw_name(), status);
+//            app::RealtimeData::instance()->set_raw_value(
+//                        var->get_hw_name(), var->get_tag_value());
+//            app::RealtimeData::instance()->set_final_value(
+//                        var->get_hw_name(), var->get_tag_final_value());
+//            app::RealtimeData::instance()->set_status(
+//                        var->get_hw_name(), status);
         }
 
     }
 }
 
 
-void Logger::read_save_tag_value() {    
-    tag_man_->get_all_tag_value();
+void Logger::read_save_tag_value() {      
 
     for(auto &var : tag_man_->tag_list_) {
         if(var->get_hw_name().find("BoardIO:AI") != std::string::npos &&
-                var->get_tag_enable()) {
+                var->get_tag_report()) {
             //LREP("process:{}\n", var->get_hw_name(), var->get_usr_name());
             std::vector<std::string> vect;
             double value_calib, value_error;
-            DC_TAG value;
-            std::string status = "";
+            double value;
+            std::string status = "N/A";
             if(var->get_tag_pin_calib() != "" &&
                     var->get_tag_pin_error() != "")
             {
-                if(!tag_man_->get_hw_tag_value(
+                if(!tag_man_->get_raw_value_by_hwname(
                             var->get_tag_pin_calib(),
                             value)) {
                     return;
                 }
-                value_calib = value.value;
-                if(!tag_man_->get_hw_tag_value(
+                value_calib = value;
+                if(!tag_man_->get_raw_value_by_hwname(
                             var->get_tag_pin_error(),
                             value)) {
                     return;
                 }
-                value_error = value.value;
+                value_error = value;
 
 
                 if(value_error > 0) {
@@ -199,15 +196,73 @@ void Logger::read_save_tag_value() {
                 }
             }
 
+            std::string tag_name, tag_value, tag_unit, tag_time;
+            double final_value;
+            switch(var->get_final_cal_type()) {
+            case 0:
+                tag_unit = "\t" + var->get_tag_inter_unit();
+                final_value = var->get_inter_value_avg();
+            case 1: {
+                    tag_unit = "\t" + var->get_tag_final_unit();
+                    double inter_value = var->get_inter_value_avg();
+                    double o2_comp = var->get_o2_comp();
+                    double get_value;
+                    if(tag_man_->get_inter_value_avg_by_hwname(
+                                var->get_o2_comp_hw_name(),
+                                get_value)) {
+                        double den = 20.9 - get_value;
+                        if(den != 0) {
+                            final_value = inter_value * ((20.9 - o2_comp) / den);
+                        } else {
+                            final_value = inter_value;
+                        }
+                    } else {
 
-            vect.push_back(var->get_usr_name());
-            std::string val = "\t" + std::to_string(int(var->get_tag_avg_value()));
-            vect.push_back(val);
-            vect.push_back("\t" + var->get_tag_unit());
-            vect.push_back(get_current_time_cont());
+                    }
+                }
+                break;
+            case 2: {
+                tag_unit = "\t" + var->get_tag_final_unit();
+                double inter_value = var->get_inter_value_avg();
+                double press_comp = var->get_press_comp();
+                double temp_comp = var->get_temp_comp();
+                double localvalue, temp_coeff = 1, press_coeff = 1;
+                if(tag_man_->get_inter_value_avg_by_hwname(
+                            var->get_press_comp_hw_name(),
+                            localvalue)) {
+                    press_coeff = 760 / localvalue;
+                }
+
+                if(tag_man_->get_inter_value_avg_by_hwname(
+                            var->get_temp_comp_hw_name(),
+                            localvalue)) {
+                    temp_coeff = (273 + temp_comp) / (273 + localvalue);
+                }
+
+                final_value = inter_value * temp_coeff * press_coeff;
+            }
+                break;
+            default:
+                break;
+            }
+
+
+            tag_value = "\t" + std::to_string(final_value);
+
+            tag_name = var->get_usr_name();
+            tag_time = get_current_time_cont();
+
+
+
+            vect.push_back(tag_name);
+            vect.push_back(tag_value);
+            vect.push_back(tag_unit);
+            vect.push_back(tag_time);
             vect.push_back(status);
-            LREP("{}\t{}\t{}\r\n",
-                 var->get_usr_name(),val, var->get_tag_unit());
+
+
+
+            LREP("{}\t{}\t{}\r\n", tag_name, tag_value, tag_unit);
             logger_write_row(vect);
         } else {
             //LREP("{} not contain BoardIO:AI\n", var->get_hw_name());

@@ -7,6 +7,7 @@ namespace app {
 tagread::tagread(io_name_bind config)
 {
     read_times_ = 0;
+    inter_value_total_ = 0;
     io_bind_ = config;
 #if COMPILE_ADAM3600 == 1
     handle_ = api_tag_open( io_bind_.hw_name.c_str(), NULL );
@@ -15,6 +16,12 @@ tagread::tagread(io_name_bind config)
         std::cout << "handle is null, open tag failed: " << io_bind_.hw_name << std::endl;
         api_tag_close(handle_);
     }
+
+    range_cal = io_bind_.rang_max - io_bind_.rang_min;
+    if(range_cal == 0) range_cal = 1;
+
+    range_raw = io_bind_.raw_max -  io_bind_.raw_min;
+    if(range_raw == 0) range_raw = 1;
 }
 
 tagread::~tagread()
@@ -22,56 +29,52 @@ tagread::~tagread()
     tag_close();
 }
 
-bool tagread::read_value(DC_TAG &value)
-{
-    if(handle_ != nullptr) {
-        value_.value = lib::rand::generate(100.0, 200.0);
-        int err = api_tag_read(&handle_, &value_, 1);
-        if(err) {            
-            //std::cout << "read error: " << err << std::endl;            
-        }
-        value = value_;        
-        return true;
-    }
-    value_.value = lib::rand::generate(100.0, 200.0);
-    return false;
-}
 
 void tagread::tag_close()
 {
     api_tag_close(handle_);
 }
 
-double tagread::get_tag_avg_value()
+double tagread::get_inter_value()
 {
-    read_times_ = 0;
-    return value_avg_;
+    double X = io_bind_.rang_min + (value_.value / range_raw) * range_cal ;
+    io_bind_.inter_value = io_bind_.coef_a + io_bind_.coef_b * X;
+    return io_bind_.inter_value;
 }
 
-double tagread::get_tag_value() {
-
-    double curr_val = value_.value;
-
-    final_value_ =  get_tag_start() +
-                    ((value_.value - get_tag_min()) * get_tag_coeff());
-
-    //LREP("value: {} ", value_.value);
-    if(read_times_ == 0) {
-        value_avg_ = curr_val;
-    } else {
-        value_avg_ = (value_avg_ + curr_val) / 2;
+bool tagread::get_raw_value()
+{
+    if(handle_ != nullptr) {        
+        int err = api_tag_read(&handle_, &value_, 1);
+        if(!err) {
+            return true;
+        }                
     }
-    read_times_++;
-    return curr_val;
+    value_.value = lib::rand::generate(100.0, 200.0);
+    return false;
 }
 
-double tagread::get_tag_final_value()
+void tagread::cal_inter_value_avg()
 {
-    final_value_ =  get_tag_start() +
-                    ((value_.value - get_tag_min()) * get_tag_coeff());
-
-    return final_value_;
+    double inter_value = get_inter_value();
+    inter_value_total_ += inter_value;
+    read_times_++;
 }
+
+
+double tagread::get_inter_value_avg()
+{
+    double avg = 0;
+    if(read_times_ > 0) {
+        avg = inter_value_total_ / read_times_;
+    } else {
+        avg = io_bind_.inter_value;
+    }
+    read_times_ = 0;
+    inter_value_total_ = 0;
+    return avg;
+}
+
 
 tagmanager::tagmanager(int numtag)
 {
@@ -108,36 +111,55 @@ bool tagmanager::add_tag(io_name_bind config)
     return true;
 }
 
-bool tagmanager::get_user_tag_value(const std::string &name,
-                               DC_TAG &value)
+bool tagmanager::get_inter_value_by_username(const std::string &name, double &value)
 {
-
     for(auto &var : tag_list_) {
         if(var->get_usr_name() == name) {
-            var->get_tag_value(value);
+            value = var->get_inter_value();
             return true;
         }
     }
-    //LREP("\r\n");
     return false;
 }
 
-bool tagmanager::get_hw_tag_value(const std::string &name, DC_TAG &value)
+bool tagmanager::get_inter_value_avg_by_username(const std::string &name, double &value)
+{
+    for(auto &var : tag_list_) {
+        if(var->get_usr_name() == name) {
+            value = var->get_inter_value_avg();
+            return true;
+        }
+    }
+    return false;
+}
+
+bool tagmanager::get_inter_value_avg_by_hwname(const std::string &name, double &value)
 {
     for(auto &var : tag_list_) {
         if(var->get_hw_name() == name) {
-            var->get_tag_value(value);
+            value = var->get_inter_value_avg();
             return true;
         }
     }
     return false;
 }
 
-void tagmanager::get_all_tag_value()
-{        
+bool tagmanager::get_raw_value_by_hwname(const std::string &name, double &value)
+{
     for(auto &var : tag_list_) {
-        DC_TAG value;
-        var->read_value(value);        
+        if(var->get_hw_name() == name) {
+            value = var->get_raw_value();
+            return true;
+        }
+    }
+    return false;
+}
+
+void tagmanager::scan_all_raw_inter_avg_value()
+{
+    for(auto &var : tag_list_) {
+        var->get_raw_value();
+        var->cal_inter_value_avg();
     }
 }
 
