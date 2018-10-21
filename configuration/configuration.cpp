@@ -100,11 +100,47 @@ bool userconfig::load_config()
         def.report = true;
         if(i <= 7) {
             def.user_name       = "user_tag" + std::to_string(i);
-            def.hw_name         = "BoardIO:DI." + std::to_string(i);                        
+            def.hw_name         = "BoardIO:DI." + std::to_string(i);
+            def.final_type      = StdCondType(0);
+            def.inter_unit      = "";
+            def.final_unit      = "";
+            def.pin_calib       = "";
+            def.pin_error       = "";
+            def.tag_desc        = "";
+            def.ai_o2           = "";
+            def.ai_press        = "";
+            def.ai_temp         = "";
+            def.rang_max        = 0;
+            def.rang_min        = 0;
+            def.raw_max         = 0;
+            def.raw_min         = 0;
+            def.ai_o2_comp      = 0;
+            def.ai_press_comp   = 0;
+            def.ai_o2_comp      = 0;
+            def.coef_a          = 0;
+            def.coef_b          = 0;
             load_tag_config("1.TAG_DI_" + std::to_string(i), config_.tag[i], def);
         } else if(i > 7 && i <= 11) {
             def.user_name       = "user_tag" + std::to_string(i);
             def.hw_name         = "BoardIO:DO." + std::to_string(i - 8);
+            def.final_type      = StdCondType(0);
+            def.inter_unit      = "";
+            def.final_unit      = "";
+            def.pin_calib       = "";
+            def.pin_error       = "";
+            def.tag_desc        = "";
+            def.ai_o2           = "";
+            def.ai_press        = "";
+            def.ai_temp         = "";
+            def.rang_max        = 0;
+            def.rang_min        = 0;
+            def.raw_max         = 0;
+            def.raw_min         = 0;
+            def.ai_o2_comp      = 0;
+            def.ai_press_comp   = 0;
+            def.ai_o2_comp      = 0;
+            def.coef_a          = 0;
+            def.coef_b          = 0;
             load_tag_config("2.TAG_DO_" + std::to_string(i - 8), config_.tag[i], def);
         } else {            
             def.user_name       = "user_tag" + std::to_string(i);
@@ -118,15 +154,19 @@ bool userconfig::load_config()
             def.ai_o2           = "";
             def.ai_press        = "";
             def.ai_temp         = "";
+            def.ai_o2_unit      = "o2_unit";
+            def.ai_temp_unit    = "temp_unit";
+            def.ai_press_unit   = "press_unit";
             def.rang_max        = 100;
             def.rang_min        = 0;
             def.raw_max         = 1000000;
             def.raw_min         = 0;
             def.ai_o2_comp      = 7;
-            def.ai_press_comp   = 0;
-            def.ai_o2_comp      = 25;
+            def.ai_press_comp   = 760;
+            def.ai_temp_comp    = 25;
             def.coef_a          = 0;
             def.coef_b          = 1;
+            def.alarm           = 90;
             load_tag_config("3.TAG_AI_" + std::to_string(i - 12), config_.tag[i], def);
         }
 
@@ -175,11 +215,16 @@ void userconfig::load_tag_config(const std::string &type, io_name_bind &tag, io_
         tag.user_name       = value["user_name"].asString();
         tag.inter_unit      = value["inter_unit"].asString();
         tag.final_unit      = value["final_unit"].asString();
+        tag.has_calib       = value["has_calib"].asBool();
         tag.pin_calib       = value["pin_calib"].asString();
+        tag.has_error       = value["has_error"].asBool();
         tag.pin_error       = value["pin_error"].asString();
         tag.ai_o2           = value["ai_o2"].asString();
-        tag.ai_temp         = value["ai_temp"].asString();
+        tag.ai_temp         = value["ai_temp"].asString();        
         tag.ai_press        = value["ai_press"].asString();
+        tag.ai_o2_unit           = value["ai_o2_unit"].asString();
+        tag.ai_temp_unit         = value["ai_temp_unit"].asString();
+        tag.ai_press_unit        = value["ai_press_unit"].asString();
         tag.ai_o2_comp      = value["ai_o2_comp"].asDouble();
         tag.ai_temp_comp    = value["ai_temp_comp"].asDouble();
         tag.ai_press_comp   = value["ai_press_comp"].asDouble();
@@ -189,6 +234,7 @@ void userconfig::load_tag_config(const std::string &type, io_name_bind &tag, io_
         tag.raw_max         = value["raw_max"].asDouble();
         tag.coef_a          = value["coef_a"].asDouble();
         tag.coef_b          = value["coef_b"].asDouble();
+        tag.alarm           = value["alarm"].asDouble();
 
     } else {
         value["enable"]     = def_val.enable;
@@ -200,10 +246,15 @@ void userconfig::load_tag_config(const std::string &type, io_name_bind &tag, io_
         value["inter_unit"] = def_val.inter_unit;
         value["final_unit"] = def_val.final_unit;
         value["pin_calib"]  = def_val.pin_calib;
+        value["has_calib"]  = def_val.has_calib;
         value["pin_error"]  = def_val.pin_error;
+        value["has_error"]  = def_val.has_error;
         value["ai_o2"]      = def_val.ai_o2;
         value["ai_temp"]    = def_val.ai_temp;
         value["ai_press"]   = def_val.ai_press;
+        value["ai_o2_unit"]      = def_val.ai_o2_unit;
+        value["ai_temp_unit"]    = def_val.ai_temp_unit;
+        value["ai_press_unit"]   = def_val.ai_press_unit;
         value["ai_o2_comp"] = def_val.ai_o2_comp;
         value["ai_temp_comp"] = def_val.ai_temp_comp;
         value["ai_press_comp"] = def_val.ai_press_comp;
@@ -213,6 +264,8 @@ void userconfig::load_tag_config(const std::string &type, io_name_bind &tag, io_
         value["raw_max"]    = def_val.raw_max;
         value["coef_a"]     = def_val.coef_a;
         value["coef_b"]     = def_val.coef_b;
+        value["alarm"]     = def_val.alarm;
+
 
         root_[type]               = value;
         tag                       = def_val;
@@ -233,10 +286,15 @@ void userconfig::save_tag_config(const std::string &type, io_name_bind tag)
     value["inter_unit"] = tag.inter_unit;
     value["final_unit"] = tag.final_unit;
     value["pin_calib"]  = tag.pin_calib;
+    value["has_calib"]  = tag.has_calib;
     value["pin_error"]  = tag.pin_error;
+    value["has_error"]  = tag.has_error;
     value["ai_o2"]      = tag.ai_o2;
     value["ai_temp"]    = tag.ai_temp;
     value["ai_press"]   = tag.ai_press;
+    value["ai_o2_unit"]      = tag.ai_o2_unit;
+    value["ai_temp_unit"]    = tag.ai_temp_unit;
+    value["ai_press_unit"]   = tag.ai_press_unit;
     value["ai_o2_comp"] = tag.ai_o2_comp;
     value["ai_temp_comp"] = tag.ai_temp_comp;
     value["ai_press_comp"] = tag.ai_press_comp;

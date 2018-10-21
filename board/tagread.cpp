@@ -8,12 +8,15 @@ tagread::tagread(io_name_bind config)
 {
     read_times_ = 0;
     inter_value_total_ = 0;
+    read_times_stream_ = 0;
+    inter_value_total_stream_ = 0;
     io_bind_ = config;
 #if COMPILE_ADAM3600 == 1
     handle_ = api_tag_open( io_bind_.hw_name.c_str(), NULL );
 #endif
     if ( nullptr == handle_ ) {
-        std::cout << "handle is null, open tag failed: " << io_bind_.hw_name << std::endl;
+        std::cout << "handle is null, open tag failed: " <<
+                     io_bind_.hw_name << std::endl;
         api_tag_close(handle_);
     }
 
@@ -35,11 +38,16 @@ void tagread::tag_close()
     api_tag_close(handle_);
 }
 
-double tagread::get_inter_value()
+double tagread::get_inter_value_curr()
 {
     double X = io_bind_.rang_min + (value_.value / range_raw) * range_cal ;
     io_bind_.inter_value = io_bind_.coef_a + io_bind_.coef_b * X;
     return io_bind_.inter_value;
+}
+
+void tagread::set_final_value(double value)
+{
+    final_value_ = value;
 }
 
 bool tagread::get_raw_value()
@@ -50,19 +58,31 @@ bool tagread::get_raw_value()
             return true;
         }                
     }
-    value_.value = lib::rand::generate(100.0, 200.0);
+    value_.value = lib::rand::generate(500000.0, 1000000.0);
     return false;
 }
 
-void tagread::cal_inter_value_avg()
+double tagread::get_raw_readed()
 {
-    double inter_value = get_inter_value();
+    return value_.value;
+}
+
+void tagread::cal_inter_value_avg_report()
+{
+    double inter_value = get_inter_value_curr();
     inter_value_total_ += inter_value;
     read_times_++;
 }
 
+void tagread::cal_inter_value_avg_stream()
+{
+    double inter_value = get_inter_value_curr();
+    inter_value_total_stream_ += inter_value;
+    read_times_stream_++;
+}
 
-double tagread::get_inter_value_avg()
+
+double tagread::get_inter_value_avg_report()
 {
     double avg = 0;
     if(read_times_ > 0) {
@@ -73,6 +93,20 @@ double tagread::get_inter_value_avg()
     read_times_ = 0;
     inter_value_total_ = 0;
     return avg;
+}
+
+double tagread::get_inter_value_avg_stream()
+{
+//    double avg = 0;
+//    if(read_times_stream_ > 0) {
+//        avg = inter_value_total_stream_ / read_times_stream_;
+//    } else {
+//        avg = io_bind_.inter_value;
+//    }
+//    read_times_stream_ = 0;
+//    inter_value_total_stream_ = 0;
+//    return avg;
+    return get_inter_value_curr();
 }
 
 
@@ -111,44 +145,59 @@ bool tagmanager::add_tag(io_name_bind config)
     return true;
 }
 
-bool tagmanager::get_inter_value_by_username(const std::string &name, double &value)
+bool tagmanager::get_inter_value_by_username(
+        const std::string &name, double &value)
 {
     for(auto &var : tag_list_) {
         if(var->get_usr_name() == name) {
-            value = var->get_inter_value();
+            value = var->get_inter_value_curr();
             return true;
         }
     }
     return false;
 }
 
-bool tagmanager::get_inter_value_avg_by_username(const std::string &name, double &value)
+bool tagmanager::get_inter_value_avg_by_username(
+        const std::string &name, double &value)
 {
     for(auto &var : tag_list_) {
         if(var->get_usr_name() == name) {
-            value = var->get_inter_value_avg();
+            value = var->get_inter_value_avg_report();
             return true;
         }
     }
     return false;
 }
 
-bool tagmanager::get_inter_value_avg_by_hwname(const std::string &name, double &value)
+bool tagmanager::get_inter_value_avg_report_by_hwname(
+        const std::string &name, double &value)
 {
     for(auto &var : tag_list_) {
         if(var->get_hw_name() == name) {
-            value = var->get_inter_value_avg();
+            value = var->get_inter_value_avg_report();
             return true;
         }
     }
     return false;
 }
 
-bool tagmanager::get_raw_value_by_hwname(const std::string &name, double &value)
+bool tagmanager::get_inter_value_avg_stream_by_hwname(const std::string &name, double &value)
 {
     for(auto &var : tag_list_) {
         if(var->get_hw_name() == name) {
-            value = var->get_raw_value();
+            value = var->get_inter_value_avg_stream();
+            return true;
+        }
+    }
+    return false;
+}
+
+bool tagmanager::get_raw_value_by_hwname(
+        const std::string &name, double &value)
+{
+    for(auto &var : tag_list_) {
+        if(var->get_hw_name() == name) {
+            value = var->get_raw_readed();
             return true;
         }
     }
@@ -159,9 +208,10 @@ void tagmanager::scan_all_raw_inter_avg_value()
 {
     for(auto &var : tag_list_) {
         var->get_raw_value();
-        var->cal_inter_value_avg();
+        var->cal_inter_value_avg_report();
     }
 }
+
 
 
 }

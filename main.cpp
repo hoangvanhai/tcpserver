@@ -69,6 +69,9 @@ int main(int argc, char *argv[])
     }
 
 
+
+
+
     struct sigaction act;
     act.sa_handler = sigal_handler;
     sigaction(SIGINT, &act, NULL);
@@ -101,9 +104,13 @@ int main(int argc, char *argv[])
 
 
     std::string ip, netmask, broadcast;
-    app::server::TcpClient::get_if_ipaddress("ens33", ip, netmask, broadcast);
+    app::server::TcpClient::get_if_ipaddress("enp7s0", ip, netmask, broadcast);
 
     LREP("ipaddress {} netmask {} broadcast {}\n", ip, netmask, broadcast);
+
+//    std::string test = "";
+//    std::string last = std::string((char*)(&test.back()));
+//    LREP("last is: {} \n", last);
 
     std::string line;
     std::vector<std::string> vect;

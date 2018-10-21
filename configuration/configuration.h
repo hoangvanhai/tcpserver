@@ -50,11 +50,16 @@ struct io_name_bind {
     std::string user_name;
     std::string inter_unit;
     std::string final_unit;
+    bool        has_calib;
     std::string pin_calib;
+    bool        has_error;
     std::string pin_error;
     std::string ai_o2;
+    std::string ai_o2_unit;
     std::string ai_temp;
+    std::string ai_temp_unit;
     std::string ai_press;
+    std::string ai_press_unit;
 
 
     double      ai_o2_comp;
@@ -67,6 +72,7 @@ struct io_name_bind {
     double      raw_max;
     double      coef_a;
     double      coef_b;
+    double      alarm;
     double      raw_value;
     double      inter_value;
     double      final_value;

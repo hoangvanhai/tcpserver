@@ -34,6 +34,15 @@ enum {
     CMD_MAX,
 };
 
+struct AvgValue{
+    double inter_value_avg;
+    double final_value_avg;
+    int count;
+    double total_inter;
+    double total_final;
+    double curr_inter;
+    double curr_final;
+};
 
 class TcpClient
 {
@@ -57,6 +66,9 @@ class TcpClient
 
     user_config userconfig_;
 
+    std::vector<AvgValue> list_avg_value_;
+    int avg_time_;
+
 public:
     explicit TcpClient(std::shared_ptr<lib::ipc::endpoint> &sock);
     virtual ~TcpClient();
@@ -76,7 +88,9 @@ public:
     void listen_thread();
     void bg_thread();
     void process_raw_data(const void *data, int len);
-    void send_realtime_data();
+    void send_realtime_timedate();
+    void process_avg_value();
+
     void send_config_all_tag();
     void send_tag_info(int tag);    
     void send_system_info();
@@ -88,6 +102,9 @@ public:
                                  std::string &ipaddress,
                                  std::string &netmask,
                                  std::string &broadcast);
+    void send_list_account();
+    static void push_point_avg(AvgValue &point, double inter, double final);
+    static void cal_point_avg(AvgValue &point);
 };
 
 

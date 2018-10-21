@@ -17,9 +17,18 @@ TcpClient::TcpClient(std::shared_ptr<endpoint> &sock) :
     status_ = lib::ipc::STATUS_CONNECTED;
     send_num_ = 0;
     logged_in_ = false;
-    streaming_ = false;
+    streaming_ = true;
     user_name_.clear();
     role_.clear();
+    AvgValue point;
+    list_avg_value_.push_back(point);
+    list_avg_value_.push_back(point);
+    list_avg_value_.push_back(point);
+    list_avg_value_.push_back(point);
+    list_avg_value_.push_back(point);
+    list_avg_value_.push_back(point);
+    list_avg_value_.push_back(point);
+    list_avg_value_.push_back(point);
 }
 
 TcpClient::~TcpClient()
@@ -119,11 +128,14 @@ void TcpClient::listen_thread()
 
 void TcpClient::bg_thread()
 {
-    //send_config_all_tag();
     while(run_bg_) {
         if(streaming_)
-            send_realtime_data();
+            send_realtime_timedate();
         std::this_thread::sleep_for(1_s);
+
+        if(avg_time_ > 1) {
+
+        }
     }
 }
 /**
@@ -177,7 +189,6 @@ void TcpClient::process_raw_data(const void *data, int len)
         } else if(value["subtype"] == "set_system_info") {
             smsg = value["data"];
             std::string ipaddress, netmask;
-            bool dhcp;
 
             user_config cfg = app::userconfig::instance()->get_user_config();
             cfg.server.address = smsg["serverip"].asString();
@@ -186,8 +197,7 @@ void TcpClient::process_raw_data(const void *data, int len)
             cfg.server.username = smsg["username"].asString();
             cfg.server.log_dur = smsg["logdur"].asInt();
             ipaddress = smsg["ipaddress"].asString();
-            netmask = smsg["netmask"].asString();
-            dhcp = smsg["dhcp"].asBool();
+            netmask = smsg["netmask"].asString();            
 
             cfg.filename.tentinh = smsg["tinh"].asString();
             cfg.filename.tencoso = smsg["coso"].asString();
@@ -196,7 +206,8 @@ void TcpClient::process_raw_data(const void *data, int len)
             app::userconfig::instance()->save_user_config(cfg);
 
 
-            set_network(dhcp, ipaddress, netmask);
+//            set_network(dhcp, ipaddress, netmask);
+            send_status_message("set_system_info", "success", "save tag param success");
 
         } else if(value["subtype"] == "get_tag_info") {
             if(value["tag_id"].isInt()) {
@@ -215,18 +226,33 @@ void TcpClient::process_raw_data(const void *data, int len)
                 }
                 smsg = value["data"];
                 user_config cfg = app::userconfig::instance()->get_user_config();
-//                cfg.tag[tag + 12].enable = smsg["enable"].asBool();
-//                cfg.tag[tag + 12].user_name = smsg["sw"].asString();
-//                cfg.tag[tag + 12].unit = smsg["unit"].asString();
-//                cfg.tag[tag + 12].pin_calib = smsg["calib"].asString();
-//                cfg.tag[tag + 12].pin_error = smsg["error"].asString();
-//                cfg.tag[tag + 12].min = smsg["min"].asDouble();
-//                cfg.tag[tag + 12].max = smsg["max"].asDouble();
-//                cfg.tag[tag + 12].coefficient = smsg["coeff"].asDouble();
-//                cfg.tag[tag + 12].start = smsg["start"].asDouble();
-//                cfg.tag[tag + 12].tag_desc = smsg["desc"].asString();
-//                cfg.tag[tag + 12].lim_min = smsg["lim_min"].asDouble();
-//                cfg.tag[tag + 12].lim_max = smsg["lim_max"].asDouble();
+                cfg.tag[tag + 12].report = smsg["report"].asBool();
+                cfg.tag[tag + 12].user_name = smsg["sw"].asString();
+                cfg.tag[tag + 12].final_unit = smsg["final_unit"].asString();
+                cfg.tag[tag + 12].inter_unit = smsg["inter_unit"].asString();
+                cfg.tag[tag + 12].pin_calib = "BoardIO:DI." + smsg["calib"].asString();
+                cfg.tag[tag + 12].has_calib = smsg["has_calib"].asBool();
+                cfg.tag[tag + 12].pin_error = "BoardIO:DI." + smsg["error"].asString();
+                cfg.tag[tag + 12].has_error = smsg["has_error"].asBool();
+                cfg.tag[tag + 12].rang_min = smsg["min"].asDouble();
+                cfg.tag[tag + 12].rang_max = smsg["max"].asDouble();
+                cfg.tag[tag + 12].coef_a = smsg["coef_a"].asDouble();
+                cfg.tag[tag + 12].coef_b = smsg["coef_b"].asDouble();
+                cfg.tag[tag + 12].final_type = StdCondType(smsg["final_type"].asInt());
+                cfg.tag[tag + 12].tag_desc = smsg["desc"].asString();
+                cfg.tag[tag + 12].ai_o2_comp = smsg["o2_comp"].asDouble();
+                cfg.tag[tag + 12].ai_temp_comp = smsg["temp_comp"].asDouble();
+                cfg.tag[tag + 12].ai_press_comp = smsg["press_comp"].asDouble();
+
+                cfg.tag[tag + 12].ai_press_unit = smsg["press_unit"].asString();
+                cfg.tag[tag + 12].ai_o2_unit = smsg["o2_unit"].asString();
+                cfg.tag[tag + 12].ai_temp_unit = smsg["temp_unit"].asString();
+                cfg.tag[tag + 12].alarm = smsg["alarm"].asDouble();
+
+                cfg.tag[tag + 12].ai_o2 = "BoardIO:AI." + smsg["ai_o2"].asString();
+                cfg.tag[tag + 12].ai_temp = "BoardIO:AI." + smsg["ai_temp"].asString();
+                cfg.tag[tag + 12].ai_press = "BoardIO:AI." + smsg["ai_press"].asString();
+
 
                 app::userconfig::instance()->save_user_config(cfg);
                 send_status_message("set_tag_info", "success", "set tag successful");
@@ -238,6 +264,8 @@ void TcpClient::process_raw_data(const void *data, int len)
             setuid(0);
             reboot(RB_AUTOBOOT);
             LREP("reboot system\n");
+        } else if(value["subtype"] == "get_list_account") {
+            send_list_account();
         }
 
     } else if(value["type"] == "config_file") {
@@ -356,32 +384,45 @@ void TcpClient::process_raw_data(const void *data, int len)
 }
 
 
-void TcpClient::send_realtime_data()
+void TcpClient::send_realtime_timedate()
 {    
     Json::Value root, array, time;
     std::vector<app::RealtimeValue> vect = app::RealtimeData::instance()->get_list_value();
     std::time_t t = std::time(0);
     time_now_ = std::localtime(&t);
 
+    std::string year, month, mday, hour, min, sec;
+    year.resize(4);month.resize(2);mday.resize(2);hour.resize(2);min.resize(2);sec.resize(2);
+
     root["type"] = "realtime_data";
     for(auto &var : vect) {
         Json::Value value;
-//        value["enable"] = var.enable;
-//        value["hw"] = var.hw_name;
-//        value["sw"] = var.sw_name;
-//        value["raw"] = var.raw_value;
-//        value["final"] = var.final_value;
-//        value["unit"] = var.unit;
-//        value["status"] = var.status;
+        value["enable"] = var.enable;
+        value["sw"] = var.sw_name;
+        value["inter"] = var.inter_value;
+        value["final"] = var.final_value;
+        value["inter_unit"] = var.inter_unit;
+        value["final_unit"] = var.final_unit;
+        value["alarm"] = var.alarm;
+        value["status"] = var.status;
+        value["min"] = var.min;
+        value["max"] = var.max;
         array.append(value);
     }
 
-    time["year"] = std::to_string(time_now_->tm_year + 1900);
-    time["month"] = std::to_string(time_now_->tm_mon + 1);
-    time["day"] = std::to_string(time_now_->tm_mday);
-    time["hour"] = std::to_string(time_now_->tm_hour);
-    time["min"] = std::to_string(time_now_->tm_min);
-    time["sec"] = std::to_string(time_now_->tm_sec);
+    sprintf((char*)year.data(), "%04d", time_now_->tm_year + 1900);
+    sprintf((char*)month.data(), "%02d", time_now_->tm_mon + 1);
+    sprintf((char*)mday.data(), "%02d", time_now_->tm_mday);
+    sprintf((char*)hour.data(), "%02d", time_now_->tm_hour);
+    sprintf((char*)min.data(), "%02d", time_now_->tm_min);
+    sprintf((char*)sec.data(), "%02d", time_now_->tm_sec);
+
+    time["year"] = year;
+    time["month"] = month;
+    time["day"] = mday;
+    time["hour"] = hour;
+    time["min"] = min;
+    time["sec"] = sec;
 
     root["data"] = array;
     root["time"] = time;
@@ -391,57 +432,71 @@ void TcpClient::send_realtime_data()
     send_data(msg.c_str(), (int)msg.size());
 }
 
-void TcpClient::send_config_all_tag()
+void TcpClient::process_avg_value()
 {
-    Json::Value root, array;
-    user_config config = userconfig::instance()->get_user_config();
+    std::vector<app::RealtimeValue> vect =
+            app::RealtimeData::instance()->get_list_value();
 
-    root["type"] = "config_file";
-
-    for(int i = 0; i < 2; i++) {
-        Json::Value value;
-//        value["enable"] = config.tag[i].enable;
-//        value["hw"] = config.tag[i].hw_name;
-//        value["sw"] = config.tag[i].user_name;
-//        value["unit"] = config.tag[i].unit;
-//        value["calib"] = config.tag[i].pin_calib;
-//        value["error"] = config.tag[i].pin_error;
-//        value["min"] = config.tag[i].min;
-//        value["max"] = config.tag[i].max;
-//        value["coeff"] = config.tag[i].coefficient;
-//        value["start"] = config.tag[i].start;
-        array.append(value);
+    if(list_avg_value_.size() != vect.size()) {
+        ERR("list size does not match\n");
     }
 
-    root["data"] = array;
-    std::cout << root << std::endl;
-    Json::FastWriter fast_writer;
-    std::string msg = fast_writer.write(root);
-    send_data(msg.c_str(), (int)msg.size());
+    for(int i = 0; i < vect.size(); i++) {
+        push_point_avg(list_avg_value_.at(i),
+                       vect.at(i).inter_value,
+                       vect.at(i).final_value);
+    }
+
 }
+
+
 
 void TcpClient::send_tag_info(int tag)
 {
     Json::Value root, value;
     user_config config = userconfig::instance()->get_user_config();
+    std::string last;
 
     root["type"] = "control";
     root["subtype"] = "get_tag_info";
     root["tag_id"] = tag;
 
-//    value["enable"] = config.tag[tag + 12].enable;
-//    value["hw"] = config.tag[tag + 12].hw_name;
-//    value["sw"] = config.tag[tag + 12].user_name;
-//    value["unit"] = config.tag[tag + 12].unit;
-//    value["calib"] = config.tag[tag + 12].pin_calib;
-//    value["error"] = config.tag[tag + 12].pin_error;
-//    value["min"] = config.tag[tag + 12].min;
-//    value["max"] = config.tag[tag + 12].max;
-//    value["coeff"] = config.tag[tag + 12].coefficient;
-//    value["start"] = config.tag[tag + 12].start;
-//    value["desc"] = config.tag[tag + 12].tag_desc;
-//    value["lim_min"] = config.tag[tag + 12].lim_min;
-//    value["lim_max"] = config.tag[tag + 12].lim_max;
+    value["report"] = config.tag[tag + 12].report;
+    value["sw"] = config.tag[tag + 12].user_name;
+    value["inter_unit"] = config.tag[tag + 12].inter_unit;
+    value["final_unit"] = config.tag[tag + 12].final_unit;
+    value["min"] = config.tag[tag + 12].rang_min;
+    value["max"] = config.tag[tag + 12].rang_max;
+    value["coef_a"] = config.tag[tag + 12].coef_a;
+    value["coef_b"] = config.tag[tag + 12].coef_b;
+    value["final_type"] = config.tag[tag + 12].final_type;
+    value["desc"] = config.tag[tag + 12].tag_desc;
+
+
+    value["o2_comp"] = config.tag[tag + 12].ai_o2_comp;
+    value["temp_comp"] = config.tag[tag + 12].ai_temp_comp;
+    value["press_comp"] = config.tag[tag + 12].ai_press_comp;
+
+    value["o2_unit"] = config.tag[tag + 12].ai_o2_unit;
+    value["temp_unit"] = config.tag[tag + 12].ai_temp_unit;
+    value["press_unit"] = config.tag[tag + 12].ai_press_unit;
+    value["alarm"] = config.tag[tag + 12].alarm;
+
+    last = std::string((char*)(&config.tag[tag + 12].pin_calib.back()));
+    value["calib"] = last;
+    value["has_calib"] = config.tag[tag + 12].has_calib;
+    last = std::string((char*)(&config.tag[tag + 12].pin_error.back()));
+
+    value["error"] = last;
+    value["has_error"] = config.tag[tag + 12].has_error;
+
+    last = std::string((char*)(&config.tag[tag + 12].ai_o2.back()));
+    value["ai_o2"] = last;
+    last = std::string((char*)(&config.tag[tag + 12].ai_temp.back()));
+    value["ai_temp"] = last;
+    last = std::string((char*)(&config.tag[tag + 12].ai_press.back()));
+    value["ai_press"] = last;
+
     root["data"] = value;
 
     std::cout << root << std::endl;
@@ -455,7 +510,7 @@ void TcpClient::send_system_info()
     Json::Value root, sysinfo;
     user_config config = userconfig::instance()->get_user_config();
     std::string myip, netmask, broadcast;
-    get_if_ipaddress("ens33", myip, netmask, broadcast);
+    get_if_ipaddress("enp7s0", myip, netmask, broadcast);
     root["type"] = "control";
     root["subtype"] = "get_system_info";
     sysinfo["ipaddress"] = myip;
@@ -481,19 +536,20 @@ void TcpClient::set_network(bool dhcp,
                             const std::string &ipaddress,
                             const std::string &netmask)
 {
-    std::string dhcp_cmd;
-    if(dhcp) {
-        dhcp_cmd = "sed -i ':a;N;$!ba;s/iface enp7s0 inet static/iface enp7s0 inet dhcp/g' /etc/network/interfaces" ;
-        system(dhcp_cmd.c_str());
-    } else {
-        dhcp_cmd = "sed -i ':a;N;$!ba;s/iface enp7s0 inet dhcp/iface enp7s0 inet static/g' /etc/network/interfaces" ;
+//    std::string dhcp_cmd;
+//    if(dhcp) {
+//        dhcp_cmd = "sed -i ':a;N;$!ba;s/iface enp7s0 inet static/iface enp7s0 inet dhcp/g' /etc/network/interfaces" ;
+//        system(dhcp_cmd.c_str());
+//    } else {
+//        dhcp_cmd = "sed -i ':a;N;$!ba;s/iface enp7s0 inet dhcp/iface enp7s0 inet static/g' /etc/network/interfaces" ;
+    {
         std::string ip_cmd = "sed -i ':a;N;$!ba;s/address [0-9]\{0,3\}\.[0-9]\{0,3\}\.[0-9]\{0,3\}\.[0-9]\{0,3\}/address " +
                 ipaddress + "/g' + /etc/network/interfaces";
         std::string netmask_cmd = "sed -i ':a;N;$!ba;s/netmask [0-9]\{0,3\}\.[0-9]\{0,3\}\.[0-9]\{0,3\}\.[0-9]\{0,3\}/netmask " +
                 netmask + "/g' + /etc/network/interfaces";
 
-        system(dhcp_cmd.c_str());
-        std::this_thread::sleep_for(500_ms);
+//        system(dhcp_cmd.c_str());
+//        std::this_thread::sleep_for(500_ms);
         system(ip_cmd.c_str());
         std::this_thread::sleep_for(500_ms);
         system(netmask_cmd.c_str());
@@ -548,6 +604,50 @@ bool TcpClient::get_if_ipaddress(const std::string &if_name,
     // Free memory
     freeifaddrs(interfaces);
     return found;
+}
+
+void TcpClient::send_list_account()
+{
+    std::vector<std::string> vect;
+    UsersLogin::instance()->getListAccount(vect);
+
+    Json::Value root, array;
+
+    root["type"] = "control";
+    root["subtype"] = "get_list_account";
+    for(auto &var : vect) {
+        Json::Value value;
+        value["account"] = var;
+        array.append(value);
+    }
+    root["data"] = array;
+    Json::FastWriter fast_writer;
+    std::string msg = fast_writer.write(root);
+    send_data(msg.c_str(), (int)msg.size());
+
+}
+
+void TcpClient::push_point_avg(AvgValue &point, double inter, double final)
+{
+    point.count++;
+    point.total_final+= final;
+    point.total_inter+= inter;
+    point.curr_final = final;
+    point.curr_inter = inter;
+}
+
+void TcpClient::cal_point_avg(AvgValue &point)
+{
+    if(point.count > 0) {
+        point.final_value_avg = point.total_final /  point.count;
+        point.inter_value_avg = point.total_inter /  point.count;
+    } else {
+        point.inter_value_avg = point.curr_inter;
+        point.final_value_avg = point.curr_final;
+    }
+    point.count = 0;
+    point.total_final = 0;
+    point.total_inter = 0;
 }
 
 

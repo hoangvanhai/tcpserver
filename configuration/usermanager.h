@@ -29,6 +29,7 @@ public:
     bool createDefaultRecord();
     bool login(const std::string &username, const std::string &passwd, std::string &role);
     bool listAllAccount();
+    bool getListAccount(std::vector<std::string> &vect);
 
     bool fileExists(const std::string   &file) {
         struct stat buf;
@@ -108,6 +109,13 @@ public:
         return ret;
     }
 
+    bool getListAccount(std::vector<std::string> &vect) {
+        bool ret;
+        locker.lock();
+        ret = handler_->getListAccount(vect);
+        locker.unlock();
+        return ret;
+    }
 
 
     bool isLoggedOn(const std::string &username);

@@ -287,6 +287,23 @@ bool UserManager::listAllAccount()
     return ret;
 }
 
+bool UserManager::getListAccount(std::vector<std::string> &vect)
+{
+    bool ret = false;
+    vect.clear();
+
+    query("SELECT * FROM users;", [&](const std::vector<std::string> &data) -> int {
+        for(auto &var : data) {
+            std::cout << var << " ";
+        }
+        vect.push_back(data.at(0) + ":" + data.at(2)+ " ");
+        std::cout << std::endl;
+        ret = true;
+        return CONTINUE;
+    });
+    return ret;
+}
+
 UsersLogin::UsersLogin()
 {
     handler_ = std::make_shared<UserManager>();
