@@ -29,6 +29,7 @@ TcpClient::TcpClient(std::shared_ptr<endpoint> &sock) :
     list_avg_value_.push_back(point);
     list_avg_value_.push_back(point);
     list_avg_value_.push_back(point);
+    update_rate_second_ = 0;
 }
 
 TcpClient::~TcpClient()
@@ -129,13 +130,23 @@ void TcpClient::listen_thread()
 void TcpClient::bg_thread()
 {
     while(run_bg_) {
-        if(streaming_)
-            send_realtime_timedate();
-        std::this_thread::sleep_for(1_s);
 
-        if(avg_time_ > 1) {
-
+        if(streaming_) {
+            if(update_rate_second_ == 0) {
+                send_realtime_timedate();
+            } else {
+                process_avg_value();
+                counter_rate_++;
+                if(counter_rate_ >= update_rate_second_) {
+                    get_all_avg_value();
+                    send_realtime_timedate_avg();
+                    counter_rate_ = 0;
+                } else {
+                    send_current_time();
+                }
+            }
         }
+        std::this_thread::sleep_for(1_s);
     }
 }
 /**
@@ -266,6 +277,12 @@ void TcpClient::process_raw_data(const void *data, int len)
             LREP("reboot system\n");
         } else if(value["subtype"] == "get_list_account") {
             send_list_account();
+        } else if(value["subtype"] == "update_rate") {
+            smsg = value["data"];
+            if(smsg["rate"] != "") {
+                update_rate_second_ = int((double)smsg["rate"].asDouble() * (double)60);
+                WARN("rate = {}\n", update_rate_second_);
+            }
         }
 
     } else if(value["type"] == "config_file") {
@@ -432,6 +449,85 @@ void TcpClient::send_realtime_timedate()
     send_data(msg.c_str(), (int)msg.size());
 }
 
+void TcpClient::send_realtime_timedate_avg()
+{
+    Json::Value root, array, time;
+    std::vector<app::RealtimeValue> vect = app::RealtimeData::instance()->get_list_value();
+    std::time_t t = std::time(0);
+    time_now_ = std::localtime(&t);
+
+    std::string year, month, mday, hour, min, sec;
+    year.resize(4);month.resize(2);mday.resize(2);hour.resize(2);min.resize(2);sec.resize(2);
+
+    root["type"] = "realtime_data";
+    for(int i = 0; i < vect.size(); i++) {
+        Json::Value value;
+        value["enable"] = vect.at(i).enable;
+        value["sw"] = vect.at(i).sw_name;
+        value["inter"] = list_avg_value_.at(i).inter_value_avg;;
+        value["final"] = list_avg_value_.at(i).final_value_avg;
+        value["inter_unit"] = vect.at(i).inter_unit;
+        value["final_unit"] = vect.at(i).final_unit;
+        value["alarm"] = vect.at(i).alarm;
+        value["status"] = vect.at(i).status;
+        value["min"] = vect.at(i).min;
+        value["max"] = vect.at(i).max;
+        array.append(value);
+    }
+
+    sprintf((char*)year.data(), "%04d", time_now_->tm_year + 1900);
+    sprintf((char*)month.data(), "%02d", time_now_->tm_mon + 1);
+    sprintf((char*)mday.data(), "%02d", time_now_->tm_mday);
+    sprintf((char*)hour.data(), "%02d", time_now_->tm_hour);
+    sprintf((char*)min.data(), "%02d", time_now_->tm_min);
+    sprintf((char*)sec.data(), "%02d", time_now_->tm_sec);
+
+    time["year"] = year;
+    time["month"] = month;
+    time["day"] = mday;
+    time["hour"] = hour;
+    time["min"] = min;
+    time["sec"] = sec;
+
+    root["data"] = array;
+    root["time"] = time;
+    //std::cout << root << std::endl;
+    Json::FastWriter fast_writer;
+    std::string msg = fast_writer.write(root);
+    send_data(msg.c_str(), (int)msg.size());
+}
+
+void TcpClient::send_current_time()
+{
+    Json::Value root, array, time;
+    std::time_t t = std::time(0);
+    time_now_ = std::localtime(&t);
+
+    std::string year, month, mday, hour, min, sec;
+    year.resize(4);month.resize(2);mday.resize(2);hour.resize(2);min.resize(2);sec.resize(2);
+    root["type"] = "realtime_data";
+    sprintf((char*)year.data(), "%04d", time_now_->tm_year + 1900);
+    sprintf((char*)month.data(), "%02d", time_now_->tm_mon + 1);
+    sprintf((char*)mday.data(), "%02d", time_now_->tm_mday);
+    sprintf((char*)hour.data(), "%02d", time_now_->tm_hour);
+    sprintf((char*)min.data(), "%02d", time_now_->tm_min);
+    sprintf((char*)sec.data(), "%02d", time_now_->tm_sec);
+
+    time["year"] = year;
+    time["month"] = month;
+    time["day"] = mday;
+    time["hour"] = hour;
+    time["min"] = min;
+    time["sec"] = sec;
+
+    root["data"] = array;
+    root["time"] = time;
+    //std::cout << root << std::endl;
+    Json::FastWriter fast_writer;
+    std::string msg = fast_writer.write(root);
+    send_data(msg.c_str(), (int)msg.size());
+}
+
 void TcpClient::process_avg_value()
 {
     std::vector<app::RealtimeValue> vect =
@@ -447,6 +543,13 @@ void TcpClient::process_avg_value()
                        vect.at(i).final_value);
     }
 
+}
+
+void TcpClient::get_all_avg_value()
+{
+    for(int i = 0; i < list_avg_value_.size(); i++) {
+        cal_point_avg(list_avg_value_.at(i));
+    }
 }
 
 

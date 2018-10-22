@@ -58,7 +58,7 @@ bool tagread::get_raw_value()
             return true;
         }                
     }
-    value_.value = lib::rand::generate(500000.0, 1000000.0);
+    value_.value = lib::rand::generate(500000.0, 1000000.0); //500000;//
     return false;
 }
 
