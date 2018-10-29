@@ -9,7 +9,7 @@
 #include <vector>
 #include <configuration.h>
 
-#define COMPILE_ADAM3600        0
+#define COMPILE_ADAM3600        1
 
 
 #if COMPILE_ADAM3600 == 1
@@ -76,6 +76,8 @@ public:
 
     std::string get_tag_pin_calib() const {return io_bind_.pin_calib;}
     std::string get_tag_pin_error() const {return io_bind_.pin_error;}
+    bool        has_pin_calib() const {return io_bind_.has_calib;}
+    bool        has_pin_error() const {return io_bind_.has_error;}
 
     int     get_final_cal_type() const {return io_bind_.final_type;}
 

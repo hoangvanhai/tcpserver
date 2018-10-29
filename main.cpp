@@ -115,7 +115,8 @@ int main(int argc, char *argv[])
     std::string line;
     std::vector<std::string> vect;
     while(keep_running) {
-
+        std::this_thread::sleep_for(1_s);
+        /*
         std::cout << "cmd>";
         getline(std::cin, line);
 
@@ -208,6 +209,9 @@ int main(int argc, char *argv[])
             if(line == "q")
                 break;
         }
+        */
+
+
     }
 
 
@@ -218,141 +222,3 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-
-/*
-            if(value == "adduser") {
-                std::cout << "user: ";
-                getline(std::cin, username);
-                std::cout << "passwd: ";
-                getline(std::cin, passwd);
-                std::cout << "role: ";
-                getline(std::cin, role);
-                if(UsersLogin::instance()->addUser(username, passwd, role)) {
-                    std::cout << "add user success" << std::endl;
-                } else {
-                    std::cout << "add user failed" << std::endl;
-                }
-            } else if (value == "deluser") {
-                std::cout << "user: ";
-                getline(std::cin, username);
-                if(UsersLogin::instance()->delUser(username)) {
-                    std::cout << "del user success" << std::endl;
-                } else {
-                    std::cout << "del user failed" << std::endl;
-                }
-            } else if(value == "changepw") {
-                std::cout << "user: ";
-                getline(std::cin, username);
-                std::cout << "passwd: ";
-                getline(std::cin, passwd);
-                if(UsersLogin::instance()->changePasswd(username, passwd)) {
-                    std::cout << "change passwd user success" << std::endl;
-                } else {
-                    std::cout << "change passwd user failed" << std::endl;
-                }
-            } else if(value == "resetpw") {
-                std::cout << "user: ";
-                getline(std::cin, username);
-                if(UsersLogin::instance()->resetPasswd(username)) {
-                    std::cout << "reset passwd for "<< username << "success" << std::endl;
-                } else {
-                    std::cout << "reset passwd for "<< username << "failed" << std::endl;
-                }
-            } else if(value == "login") {
-                std::cout << "user: ";
-                getline(std::cin, username);
-                std::cout << "passwd: ";
-                getline(std::cin, passwd);
-                if(UsersLogin::instance()->checkUserPasswdMatch(username, passwd, role)) {
-                    std::cout << "login success: username: " << username << " role: " << role << std::endl;
-                } else {
-                    std::cout << "login failed" << std::endl;
-                }
-            } else if(value == "list") {
-                if(UsersLogin::instance()->listAllAccount()) {
-                    std::cout << "list successful" << std::endl;
-                } else {
-                    std::cout << "list failed" << std::endl;
-                }
-            } else {
-                std::cout << "not handle command " << value << std::endl;
-            }
-
-
-            if(value == "filename") {
-                app::user_config cfg_ = app::userconfig::instance()->get_user_config();
-                std::cout << "tentinh: ";
-                getline(std::cin, temp);
-                cfg_.filename.tentinh = temp;
-                std::cout << "tencoso: ";
-                getline(std::cin, temp);
-                cfg_.filename.tencoso = temp;
-                std::cout << "tentram: ";
-                getline(std::cin, temp);
-                cfg_.filename.tentram = temp;
-                app::userconfig::instance()->save_user_config(cfg_);
-
-            } else if (value == "deluser") {
-                app::user_config cfg_ = app::userconfig::instance()->get_user_config();
-                std::cout << "ip: ";
-                getline(std::cin, temp);
-                cfg_.server.address = temp;
-                std::cout << "username: ";
-                getline(std::cin, temp);
-                cfg_.server.username = temp;
-                std::cout << "password: ";
-                getline(std::cin, temp);
-                cfg_.server.passwd = temp;
-                app::userconfig::instance()->save_user_config(cfg_);
-            } else if(value == "connect") {
-                tcpclient->start("192.168.40.119", 21);
-            } else if(value == "disconnect") {
-                tcpclient->stop();
-            }
-
-
-            lib::string::split(value, " ", vect);
-
-            if(vect.at(0) == "ls") {
-                ftp->remote_ls(temp);
-            } else if(vect.at(0) == "cd") {
-                if(vect.size() >= 2)
-                    ftp->remote_cwd(vect.at(1), temp);
-            } else if(vect.at(0) == "pwd") {
-                ftp->remote_pwd(temp);
-            } else if(vect.at(0) == "mkd") {
-                if(vect.size() >= 2)
-                    ftp->remote_mkd(vect.at(1), temp);
-            } else if(vect.at(0) == "folder") {
-                if(vect.size() >= 2) {
-                    if(ftp->remote_mkd_recursive(vect.at(1)) == 0) {
-                        LREP("cd ok\n");
-                    } else {
-                        LREP("cd err \n");
-                    }
-                }
-            } else if(vect.at(0) == "put") {
-                int i = 0;
-
-                Json::StyledStreamWriter writer;
-                Json::Value root;
-                for(i = 0; i < 10; i++){
-                    std::ofstream outfile;
-                    std::string filename = "./test" + std::to_string(i);
-                    outfile.open(filename, std::ios::out);
-                    if(outfile.is_open()) {
-                        root["file"] = "file" + std::to_string(i);
-                        root["data"] = "data";
-                        writer.write(outfile,root);
-                        outfile.close();
-                    } else {
-                        LREP("can't open file {}\n", filename);
-                    }
-
-                    ftp->remote_put(filename,
-                                    "./",
-                                    "2018/10/09");
-                    std::this_thread::sleep_for(2_s);
-                }
-            }
-*/

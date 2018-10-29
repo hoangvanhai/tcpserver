@@ -30,6 +30,7 @@ TcpClient::TcpClient(std::shared_ptr<endpoint> &sock) :
     list_avg_value_.push_back(point);
     list_avg_value_.push_back(point);
     update_rate_second_ = 0;
+    userconfig_ = userconfig::instance()->get_user_config();
 }
 
 TcpClient::~TcpClient()
@@ -214,10 +215,9 @@ void TcpClient::process_raw_data(const void *data, int len)
             cfg.filename.tencoso = smsg["coso"].asString();
             cfg.filename.tentram = smsg["tram"].asString();
 
-            app::userconfig::instance()->save_user_config(cfg);
+            set_network(false, ipaddress, netmask);
 
-
-//            set_network(dhcp, ipaddress, netmask);
+            app::userconfig::instance()->save_user_config(cfg);           
             send_status_message("set_system_info", "success", "save tag param success");
 
         } else if(value["subtype"] == "get_tag_info") {
@@ -280,7 +280,11 @@ void TcpClient::process_raw_data(const void *data, int len)
         } else if(value["subtype"] == "update_rate") {
             smsg = value["data"];
             if(smsg["rate"] != "") {
-                update_rate_second_ = int((double)smsg["rate"].asDouble() * (double)60);
+                if(smsg["rate"].asDouble() > 0) {
+                    update_rate_second_ = userconfig_.server.log_dur * 60;
+                } else {
+                    update_rate_second_ = 0;
+                }
                 WARN("rate = {}\n", update_rate_second_);
             }
         }
@@ -613,7 +617,7 @@ void TcpClient::send_system_info()
     Json::Value root, sysinfo;
     user_config config = userconfig::instance()->get_user_config();
     std::string myip, netmask, broadcast;
-    get_if_ipaddress("enp7s0", myip, netmask, broadcast);
+    get_if_ipaddress("eth0", myip, netmask, broadcast);
     root["type"] = "control";
     root["subtype"] = "get_system_info";
     sysinfo["ipaddress"] = myip;
@@ -635,29 +639,28 @@ void TcpClient::send_system_info()
     send_data(msg.c_str(), (int)msg.size());
 }
 
-void TcpClient::set_network(bool dhcp,
+int TcpClient::set_network(bool dhcp,
                             const std::string &ipaddress,
                             const std::string &netmask)
 {
-//    std::string dhcp_cmd;
-//    if(dhcp) {
-//        dhcp_cmd = "sed -i ':a;N;$!ba;s/iface enp7s0 inet static/iface enp7s0 inet dhcp/g' /etc/network/interfaces" ;
-//        system(dhcp_cmd.c_str());
-//    } else {
-//        dhcp_cmd = "sed -i ':a;N;$!ba;s/iface enp7s0 inet dhcp/iface enp7s0 inet static/g' /etc/network/interfaces" ;
-    {
-        std::string ip_cmd = "sed -i ':a;N;$!ba;s/address [0-9]\{0,3\}\.[0-9]\{0,3\}\.[0-9]\{0,3\}\.[0-9]\{0,3\}/address " +
-                ipaddress + "/g' + /etc/network/interfaces";
-        std::string netmask_cmd = "sed -i ':a;N;$!ba;s/netmask [0-9]\{0,3\}\.[0-9]\{0,3\}\.[0-9]\{0,3\}\.[0-9]\{0,3\}/netmask " +
-                netmask + "/g' + /etc/network/interfaces";
 
-//        system(dhcp_cmd.c_str());
-//        std::this_thread::sleep_for(500_ms);
-        system(ip_cmd.c_str());
-        std::this_thread::sleep_for(500_ms);
-        system(netmask_cmd.c_str());
+    std::string ip_cmd = "sed -i ':a;N;$!ba;s/address [0-9]\\{0,3\\}\\.[0-9]\\{0,3\\}\\.[0-9]\\{0,3\\}\\.[0-9]\\{0,3\\}/address " +
+            ipaddress + "/g' /etc/network/interfaces.d/eth0";
+    std::string netmask_cmd = "sed -i ':a;N;$!ba;s/netmask [0-9]\\{0,3\\}\\.[0-9]\\{0,3\\}\\.[0-9]\\{0,3\\}\\.[0-9]\\{0,3\\}/netmask " +
+            netmask + "/g' /etc/network/interfaces.d/eth0";
+
+    LREP("set if = {}\n", ip_cmd);
+
+    int ret = system(ip_cmd.c_str());
+    if(ret != 0) {
+        WARN("ret change ip = {}\r\n", ret);
+    }
+    ret = system(netmask_cmd.c_str());
+    if(ret != 0) {
+        WARN("ret change netmask = {}\r\n", ret);
     }
 
+    return ret;
 }
 
 void TcpClient::send_status_message(const std::string &type,

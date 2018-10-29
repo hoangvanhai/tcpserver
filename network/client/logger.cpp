@@ -119,9 +119,8 @@ void Logger::read_tag_value()
             //LREP("process:{}\n", var->get_hw_name(), var->get_usr_name());
             double value_calib, value_error;
             double value;
-            std::string status = "N/A";
-            if(var->get_tag_pin_calib() != "" &&
-                    var->get_tag_pin_error() != "")
+            std::string status = "00";
+            if(var->has_pin_calib() && var->has_pin_error())
             {
                 if(!tag_man_->get_raw_value_by_hwname(
                             var->get_tag_pin_calib(),
@@ -146,30 +145,32 @@ void Logger::read_tag_value()
                         status = "00";
                     }
                 }
+                //LREP("status = {}\n", status);
+            } else {
+                //LREP("no calib - error pin\n");
             }
 
-            double final_value, inter_value;
-
-            switch(var->get_final_cal_type()) {
+            double final_value = 0, inter_value = 0;
+            int cal_type = var->get_final_cal_type();
+            switch(cal_type) {
             case 0:
                 inter_value = var->get_inter_value_avg_stream();
                 final_value = inter_value;
+                break;
             case 1: {
                     inter_value = var->get_inter_value_avg_stream();
                     double o2_comp = var->get_o2_comp();
+                    double o2_coeff = 1;
                     double get_value;
                     if(tag_man_->get_inter_value_avg_stream_by_hwname(
                                 var->get_o2_comp_hw_name(),
                                 get_value)) {
                         double den = 20.9 - get_value;
                         if(den != 0) {
-                            final_value = inter_value * ((20.9 - o2_comp) / den);
-                        } else {
-                            final_value = inter_value;
+                            o2_coeff =  ((20.9 - o2_comp) / den);
                         }
-                    } else {
-
                     }
+                    final_value = o2_coeff * inter_value;
                 }
                 break;
             case 2: {
@@ -196,6 +197,7 @@ void Logger::read_tag_value()
                 break;
             }
 
+            //LREP("cal type: {} final: {} \n", cal_type, final_value);
 
             app::RealtimeData::instance()->set_all_value(
                         var->get_hw_name(),
@@ -218,9 +220,8 @@ void Logger::read_save_tag_value() {
             std::vector<std::string> vect;
             double value_calib, value_error;
             double value;
-            std::string status = "N/A";
-            if(var->get_tag_pin_calib() != "" &&
-                    var->get_tag_pin_error() != "")
+            std::string status = "00";
+            if(var->has_pin_calib() && var->has_pin_error())
             {
                 if(!tag_man_->get_raw_value_by_hwname(
                             var->get_tag_pin_calib(),

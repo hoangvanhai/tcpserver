@@ -97,7 +97,7 @@ public:
     void send_config_all_tag();
     void send_tag_info(int tag);    
     void send_system_info();
-    void set_network(bool dhcp, const std::string &ipaddress, const std::string &netmask);
+    int set_network(bool dhcp, const std::string &ipaddress, const std::string &netmask);
     void send_status_message(const std::string &type, const std::string &status,
                              const std::string &message);
 
