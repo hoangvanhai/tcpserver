@@ -166,7 +166,7 @@ void Logger::read_tag_value()
                                 var->get_o2_comp_hw_name(),
                                 get_value)) {
                         double den = 20.9 - get_value;
-                        if(den != 0) {
+                        if((20.9 - get_value) != 0  && (20.9 - o2_comp) != 0) {
                             o2_coeff =  ((20.9 - o2_comp) / den);
                         }
                     }
@@ -181,14 +181,14 @@ void Logger::read_tag_value()
                 if(tag_man_->get_inter_value_avg_stream_by_hwname(
                             var->get_press_comp_hw_name(),
                             localvalue)) {
-                    if(localvalue != 0)
+                    if(localvalue != 0 && press_comp != 0)
                         press_coeff = press_comp / localvalue;
                 }
 
                 if(tag_man_->get_inter_value_avg_stream_by_hwname(
                             var->get_temp_comp_hw_name(),
                             localvalue)) {
-                    if((273 + localvalue) != 0)
+                    if(((273 + localvalue) != 0) && ((273 + temp_comp) != 0))
                         temp_coeff = (273 + temp_comp) / (273 + localvalue);
                 }
 
@@ -198,6 +198,10 @@ void Logger::read_tag_value()
             default:
                 break;
             }
+
+            if(inter_value < 0) inter_value = 0;
+            if(final_value < 0) final_value = 0;
+
 
             //LREP("cal type: {} final: {} \n", cal_type, final_value);
 
@@ -264,18 +268,20 @@ void Logger::read_save_tag_value() {
                     inter_value = var->get_inter_value_avg_report();
                     double o2_comp = var->get_o2_comp();
                     double get_value;
+                    double o2_coeff = 1;
                     if(tag_man_->get_inter_value_avg_report_by_hwname(
                                 var->get_o2_comp_hw_name(),
                                 get_value)) {
                         double den = 20.9 - get_value;
-                        if(den != 0) {
-                            final_value = inter_value * ((20.9 - o2_comp) / den);
-                        } else {
-                            final_value = inter_value;
+                        if(den != 0 && (20.9 - o2_comp) != 0) {
+                            o2_coeff = ((20.9 - o2_comp) / den);
                         }
                     } else {
                         WARN("hw name not found {}\r\n", var->get_o2_comp_hw_name());
                     }
+
+                    final_value = inter_value * o2_coeff;
+
                     WARN("{} O2 COMP: inter value = {}, final value = {} o2_comp: {} \r\n", var->get_usr_name(), inter_value, final_value, o2_comp);
                 }
                 break;
@@ -288,13 +294,15 @@ void Logger::read_save_tag_value() {
                 if(tag_man_->get_inter_value_avg_report_by_hwname(
                             var->get_press_comp_hw_name(),
                             localvalue)) {
-                    press_coeff = press_comp / localvalue;
+                    if(localvalue != 0 && press_comp != 0)
+                        press_coeff = press_comp / localvalue;
                 }
 
                 if(tag_man_->get_inter_value_avg_report_by_hwname(
                             var->get_temp_comp_hw_name(),
                             localvalue)) {
-                    temp_coeff = (273 + temp_comp) / (273 + localvalue);
+                    if(((273 + localvalue) != 0) && ((273 + temp_comp) != 0))
+                        temp_coeff = (273 + temp_comp) / (273 + localvalue);
                 }
 
                 final_value = inter_value * temp_coeff * press_coeff;
@@ -307,6 +315,7 @@ void Logger::read_save_tag_value() {
                 break;
             }
 
+            if(final_value < 0) final_value = 0;
 
             tag_value = "\t" + std::to_string(final_value);
 
