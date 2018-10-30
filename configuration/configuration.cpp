@@ -304,6 +304,7 @@ void userconfig::save_tag_config(const std::string &type, io_name_bind tag)
     value["raw_max"]    = tag.raw_max;
     value["coef_a"]     = tag.coef_a;
     value["coef_b"]     = tag.coef_b;
+    value["alarm"]      = tag.alarm;
     root_[type]               = value;
     is_save_ = true;
 }

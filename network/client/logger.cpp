@@ -47,7 +47,7 @@ int Logger::start()
         }
     }
 
-    FtpManager::start(config_.server.address, config_.server.port,
+    FtpManager::start(config_.server.address, 21/*config_.server.port*/,
           config_.server.username, config_.server.passwd);
 
     LREP("tag size: {}\n", tag_man_->tag_list_.size());
@@ -181,13 +181,15 @@ void Logger::read_tag_value()
                 if(tag_man_->get_inter_value_avg_stream_by_hwname(
                             var->get_press_comp_hw_name(),
                             localvalue)) {
-                    press_coeff = press_comp / localvalue;
+                    if(localvalue != 0)
+                        press_coeff = press_comp / localvalue;
                 }
 
                 if(tag_man_->get_inter_value_avg_stream_by_hwname(
                             var->get_temp_comp_hw_name(),
                             localvalue)) {
-                    temp_coeff = (273 + temp_comp) / (273 + localvalue);
+                    if((273 + localvalue) != 0)
+                        temp_coeff = (273 + temp_comp) / (273 + localvalue);
                 }
 
                 final_value = inter_value * temp_coeff * press_coeff;
@@ -249,14 +251,17 @@ void Logger::read_save_tag_value() {
             }
 
             std::string tag_name, tag_value, tag_unit, tag_time;
-            double final_value;
+            double final_value, inter_value;
             switch(var->get_final_cal_type()) {
             case 0:
                 tag_unit = "\t" + var->get_tag_inter_unit();
-                final_value = var->get_inter_value_avg_report();
+                inter_value = var->get_inter_value_avg_report();
+                final_value = inter_value;
+                WARN("{} NO COMP: inter value = {}, final value = {}\r\n", var->get_usr_name(), inter_value, final_value);
+                break;
             case 1: {
                     tag_unit = "\t" + var->get_tag_final_unit();
-                    double inter_value = var->get_inter_value_avg_report();
+                    inter_value = var->get_inter_value_avg_report();
                     double o2_comp = var->get_o2_comp();
                     double get_value;
                     if(tag_man_->get_inter_value_avg_report_by_hwname(
@@ -269,13 +274,14 @@ void Logger::read_save_tag_value() {
                             final_value = inter_value;
                         }
                     } else {
-
+                        WARN("hw name not found {}\r\n", var->get_o2_comp_hw_name());
                     }
+                    WARN("{} O2 COMP: inter value = {}, final value = {} o2_comp: {} \r\n", var->get_usr_name(), inter_value, final_value, o2_comp);
                 }
                 break;
             case 2: {
                 tag_unit = "\t" + var->get_tag_final_unit();
-                double inter_value = var->get_inter_value_avg_report();
+                inter_value = var->get_inter_value_avg_report();
                 double press_comp = var->get_press_comp();
                 double temp_comp = var->get_temp_comp();
                 double localvalue, temp_coeff = 1, press_coeff = 1;
@@ -292,6 +298,9 @@ void Logger::read_save_tag_value() {
                 }
 
                 final_value = inter_value * temp_coeff * press_coeff;
+
+                WARN("{} T-P COMP: inter value = {}, final value = {} t-comp: {} p-comp: {} \r\n", var->get_usr_name(),
+                     inter_value, final_value, temp_comp, press_comp);
             }
                 break;
             default:
@@ -314,7 +323,7 @@ void Logger::read_save_tag_value() {
 
 
 
-            LREP("{}\t{}\t{}\r\n", tag_name, tag_value, tag_unit);
+            //LREP("{}\t{}\t{}\r\n", tag_name, tag_value, tag_unit);
             logger_write_row(vect);
         } else {
         }
