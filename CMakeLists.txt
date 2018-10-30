@@ -67,7 +67,7 @@ elseif(UNIX)
         target_link_libraries(${PROJECT_NAME} LINK_PRIVATE benchmark)
     endif()
     target_link_libraries(${PROJECT_NAME} LINK_PRIVATE pthread dl rt)
-    target_link_libraries(${PROJECT_NAME} LINK_PRIVATE ssl crypto)
+#    target_link_libraries(${PROJECT_NAME} LINK_PRIVATE ssl crypto)
 endif()
 target_link_libraries(${PROJECT_NAME} LINK_PRIVATE jsoncpp sqlite3 DCTag)
 

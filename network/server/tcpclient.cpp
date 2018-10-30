@@ -205,7 +205,7 @@ void TcpClient::process_raw_data(const void *data, int len)
             user_config cfg = app::userconfig::instance()->get_user_config();
             cfg.server.address = smsg["serverip"].asString();
             cfg.server.passwd = smsg["password"].asString();
-            cfg.server.port = smsg["port"].asInt();
+            //cfg.server.port = smsg["port"].asInt();
             cfg.server.username = smsg["username"].asString();
             cfg.server.log_dur = smsg["logdur"].asInt();
             ipaddress = smsg["ipaddress"].asString();
