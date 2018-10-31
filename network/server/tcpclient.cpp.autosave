@@ -349,7 +349,7 @@ void TcpClient::process_raw_data(const void *data, int len)
         if(logged_in_ && role_ == "supperuser") {
             if(value["data"] != "") {
                 smsg = value["data"];
-                if(smsg["username"].asString() != "root") {
+                if(smsg["username"].asString() != "Vatcom") {
                     if(UsersLogin::instance()->delUser(smsg["username"].asString())) {
                         send_status_message("del_user", "success", "delete user successful");
                     } else {

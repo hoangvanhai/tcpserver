@@ -98,6 +98,8 @@ bool userconfig::load_config()
         io_name_bind def;
         def.enable = true;
         def.report = true;
+        def.alarm_enable = true;
+        def.cal_revert = false;
         if(i <= 7) {
             def.user_name       = "user_tag" + std::to_string(i);
             def.hw_name         = "BoardIO:DI." + std::to_string(i);
@@ -119,6 +121,7 @@ bool userconfig::load_config()
             def.ai_o2_comp      = 0;
             def.coef_a          = 0;
             def.coef_b          = 0;
+            def.alarm           = 0;
             load_tag_config("1.TAG_DI_" + std::to_string(i), config_.tag[i], def);
         } else if(i > 7 && i <= 11) {
             def.user_name       = "user_tag" + std::to_string(i);
@@ -141,6 +144,7 @@ bool userconfig::load_config()
             def.ai_o2_comp      = 0;
             def.coef_a          = 0;
             def.coef_b          = 0;
+            def.alarm           = 0;
             load_tag_config("2.TAG_DO_" + std::to_string(i - 8), config_.tag[i], def);
         } else {            
             def.user_name       = "user_tag" + std::to_string(i);
@@ -209,6 +213,8 @@ void userconfig::load_tag_config(const std::string &type, io_name_bind &tag, io_
     if(try_get_object(root_, type, value)) {
         tag.enable          = value["enable"].asBool();
         tag.report          = value["report"].asBool();
+        tag.cal_revert      = value["cal_revert"].asBool();
+        tag.alarm_enable    = value["alarm_en"].asBool();
         tag.final_type      = StdCondType(value["final_type"].asInt());
         tag.tag_desc        = value["tag_desc"].asString();
         tag.hw_name         = value["hw_name"].asString();
@@ -239,6 +245,8 @@ void userconfig::load_tag_config(const std::string &type, io_name_bind &tag, io_
     } else {
         value["enable"]     = def_val.enable;
         value["report"]     = def_val.report;
+        value["cal_revert"] = def_val.cal_revert;
+        value["alarm_en"]   = def_val.alarm_enable;
         value["final_type"] = def_val.final_type;
         value["tag_desc"]   = def_val.tag_desc;
         value["hw_name"]    = def_val.hw_name;
@@ -279,6 +287,8 @@ void userconfig::save_tag_config(const std::string &type, io_name_bind tag)
     try_get_object(root_, type, value);
     value["enable"]     = tag.enable;
     value["report"]     = tag.report;
+    value["cal_revert"] = tag.cal_revert;
+    value["alarm_en"]   = tag.alarm_enable;
     value["final_type"] = tag.final_type;
     value["tag_desc"]   = tag.tag_desc;
     value["hw_name"]    = tag.hw_name;

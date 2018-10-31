@@ -43,6 +43,8 @@ enum StdCondType {
 struct io_name_bind {
     bool        enable;
     bool        report;
+    bool        cal_revert;
+    bool        alarm_enable;
     StdCondType final_type;
 
     std::string tag_desc;

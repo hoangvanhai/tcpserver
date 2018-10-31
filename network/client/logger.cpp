@@ -115,7 +115,7 @@ void Logger::read_tag_value()
 
     for(auto &var : tag_man_->tag_list_) {
         if(var->get_hw_name().find("BoardIO:AI") != std::string::npos &&
-                var->get_tag_report()) {
+                var->get_tag_enable()) {
             //LREP("process:{}\n", var->get_hw_name(), var->get_usr_name());
             double value_calib, value_error;
             double value;
@@ -152,6 +152,7 @@ void Logger::read_tag_value()
 
             double final_value = 0, inter_value = 0;
             int cal_type = var->get_final_cal_type();
+            bool cal_revert = var->get_final_cal_revert();
             switch(cal_type) {
             case 0:
                 inter_value = var->get_inter_value_avg_stream();
@@ -170,7 +171,10 @@ void Logger::read_tag_value()
                             o2_coeff =  ((20.9 - o2_comp) / den);
                         }
                     }
-                    final_value = o2_coeff * inter_value;
+                    if(!cal_revert)
+                        final_value = o2_coeff * inter_value;
+                    else
+                        final_value = inter_value / o2_coeff;
                 }
                 break;
             case 2: {
@@ -189,10 +193,13 @@ void Logger::read_tag_value()
                             var->get_temp_comp_hw_name(),
                             localvalue)) {
                     if(((273 + localvalue) != 0) && ((273 + temp_comp) != 0))
-                        temp_coeff = (273 + temp_comp) / (273 + localvalue);
+                        temp_coeff = (273 + localvalue) / (273 + temp_comp);
                 }
 
-                final_value = inter_value * temp_coeff * press_coeff;
+                if(!cal_revert)
+                    final_value = inter_value * temp_coeff * press_coeff;
+                else
+                    final_value = inter_value / (temp_coeff * press_coeff);
             }
                 break;
             default:

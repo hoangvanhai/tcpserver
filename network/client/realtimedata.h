@@ -17,6 +17,7 @@ struct RealtimeValue{
     double      alarm;
     double      min;
     double      max;
+    bool        alarm_enable;
 };
 class RealtimeData : public lib::pattern::singleton<RealtimeData>
 {

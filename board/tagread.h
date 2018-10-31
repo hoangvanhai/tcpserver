@@ -9,7 +9,7 @@
 #include <vector>
 #include <configuration.h>
 
-#define COMPILE_ADAM3600        1
+#define COMPILE_ADAM3600        0
 
 
 #if COMPILE_ADAM3600 == 1
@@ -80,6 +80,7 @@ public:
     bool        has_pin_error() const {return io_bind_.has_error;}
 
     int     get_final_cal_type() const {return io_bind_.final_type;}
+    bool    get_final_cal_revert() const {return io_bind_.cal_revert;}
 
 private:
     io_name_bind    io_bind_;

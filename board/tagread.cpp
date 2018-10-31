@@ -54,12 +54,12 @@ bool tagread::get_raw_value()
 {
     if(handle_ != nullptr) {        
         int err = api_tag_read(&handle_, &value_, 1);
-        std::cout << "tag: " << io_bind_.user_name << " val: " << value_.value << std::endl;
+        //std::cout << "tag: " << io_bind_.user_name << " val: " << value_.value << std::endl;
         if(!err) {
             return true;
         }                
     }
-    //value_.value = lib::rand::generate(500000.0, 1000000.0); //500000;//
+    value_.value = lib::rand::generate(500000.0, 1000000.0); //500000;//
     return false;
 }
 

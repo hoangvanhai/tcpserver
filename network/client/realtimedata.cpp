@@ -14,6 +14,7 @@ void RealtimeData::add_point_value(const app::io_name_bind &tag) {
     point.inter_unit = tag.inter_unit;
     point.final_unit = tag.final_unit;
     point.alarm = tag.alarm;
+    point.alarm_enable = tag.alarm_enable;
     point.min = tag.rang_min;
     point.max = tag.rang_max;
     point.final_value = 0;
