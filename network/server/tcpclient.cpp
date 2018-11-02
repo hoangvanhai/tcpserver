@@ -273,6 +273,7 @@ void TcpClient::process_raw_data(const void *data, int len)
                 LREP("tag id not number\n");
             }
         } else if(value["subtype"] == "system_reboot") {
+            //exit(0);
             sync();
             setuid(0);
             reboot(RB_AUTOBOOT);
@@ -346,10 +347,10 @@ void TcpClient::process_raw_data(const void *data, int len)
             send_status_message("add_user", "error", "no privilege or not logged in");
         }
     } else if(value["type"] == "del_user") {
-        if(logged_in_ && role_ == "supperuser") {
+        if(logged_in_ && role_ != "user") {
             if(value["data"] != "") {
                 smsg = value["data"];
-                if(smsg["username"].asString() != "root") {
+                if(smsg["username"].asString() != "Vatcom") {
                     if(UsersLogin::instance()->delUser(smsg["username"].asString())) {
                         send_status_message("del_user", "success", "delete user successful");
                     } else {
@@ -383,7 +384,7 @@ void TcpClient::process_raw_data(const void *data, int len)
             }
         }
     } else if(value["type"] == "reset_password") {
-        if(logged_in_ && role_ == "supperuser") {
+        if(logged_in_ && role_ != "user") {
             if(value["data"] != "") {
                 smsg = value["data"];
                 if(UsersLogin::instance()->resetPasswd(smsg["username"].asString())) {

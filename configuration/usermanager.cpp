@@ -2,16 +2,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <cpp_lib/filesystem.h>
 
-#define FILE_PATH_INFO  "./users.db"
+#define FILE_PATH_INFO_LC  "/users.db"
 
 UserManager::UserManager()
 {
+
     int rc;
-    bool exist = fileExists(FILE_PATH_INFO);
+    std::string full_path = lib::filesystem::current_path().string() + FILE_PATH_INFO_LC;
+    bool exist = fileExists(full_path);
     if(exist) {
         std::cout << "file existed !\r\n";
-        rc = sqlite3_open(FILE_PATH_INFO, &db_);
+        rc = sqlite3_open(full_path.c_str(), &db_);
         if(rc == SQLITE_OK) {
             std::cout << "open connection ok\r\n";
             createDefaultTable();
@@ -22,11 +25,11 @@ UserManager::UserManager()
         std::cout << "file is not existed !\r\n";
         std::fstream file;
         std::cout << "create new file\r\n";
-        file.open(FILE_PATH_INFO, std::ios::out);
+        file.open(full_path, std::ios::out);
         if(file.is_open()) {
             file.close();
             std::cout << "create file success\r\n";
-            rc = sqlite3_open(FILE_PATH_INFO, &db_);
+            rc = sqlite3_open(full_path.c_str(), &db_);
             if(rc == SQLITE_OK) {
                 std::cout << "open connection ok\r\n";
                 createDefaultTable();

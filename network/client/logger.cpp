@@ -63,7 +63,7 @@ int Logger::start()
     });
 
 
-    load_buff_file("buffer.json");
+    load_buff_file(lib::filesystem::current_path().string() + "/buffer.json");
 
     return 0;
 }
@@ -265,7 +265,7 @@ void Logger::read_save_tag_value() {
             double final_value, inter_value;
             switch(var->get_final_cal_type()) {
             case 0:
-                tag_unit = "\t" + var->get_tag_inter_unit();
+                tag_unit = "\t" + var->get_tag_final_unit();
                 inter_value = var->get_inter_value_avg_report();
                 final_value = inter_value;
                 WARN("{} NO COMP: inter value = {}, final value = {}\r\n", var->get_usr_name(), inter_value, final_value);

@@ -103,10 +103,12 @@ int main(int argc, char *argv[])
 
 
 
-    std::string ip, netmask, broadcast;
-    app::server::TcpClient::get_if_ipaddress("enp7s0", ip, netmask, broadcast);
+    //std::string ip, netmask, broadcast;
+    //app::server::TcpClient::get_if_ipaddress("enp7s0", ip, netmask, broadcast);
 
-    LREP("ipaddress {} netmask {} broadcast {}\n", ip, netmask, broadcast);
+    //LREP("ipaddress {} netmask {} broadcast {}\n", ip, netmask, broadcast);
+
+    LREP("curr path = {}\r\n", lib::filesystem::current_path().string());
 
 //    std::string test = "";
 //    std::string last = std::string((char*)(&test.back()));
