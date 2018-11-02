@@ -111,18 +111,18 @@ double tagread::get_inter_value_avg_stream()
 }
 
 
-tagmanager::tagmanager(int numtag)
-{
-    num_tag_ = numtag;
-    int err;
-    err = api_tag_init(num_tag_, 0, 0);
-    if(err) {
-        std::cout << "dc tag init error " << err << std::endl;
-    } else {
-        std::cout << "dc tag init success\n";
-    }
+//tagmanager::tagmanager(int numtag)
+//{
+//    num_tag_ = numtag;
+//    int err;
+//    err = api_tag_init(num_tag_, 0, 0);
+//    if(err) {
+//        std::cout << "dc tag init error " << err << std::endl;
+//    } else {
+//        std::cout << "dc tag init success\n";
+//    }
 
-}
+//}
 
 tagmanager::~tagmanager()
 {

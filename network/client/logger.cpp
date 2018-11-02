@@ -18,7 +18,7 @@ Logger::Logger() {
     loader_ = nullptr;    
 }
 
-int Logger::start()
+int Logger::start(bool master)
 {    
     config_ = app::userconfig::instance()->get_user_config();
     std::string cwd = pwd();
@@ -29,28 +29,42 @@ int Logger::start()
     }
 
     LREP("pwd = {}\n", cwd);
-    max_num_file_ = config_.server.max_hold;
-    local_folder_path_ = config_.server.data_path;
+
+
+
+    is_master = master;
+    if(is_master) {
+
+        app::user_config cfg = app::userconfig::instance()->get_user_config();
+        app::tagmanager::instance()->set_num_tag(APP_SYSTEM_MAX_TAG);
+        for(int i = 0; i < APP_SYSTEM_MAX_TAG; i++) {
+            app::tagmanager::instance()->add_tag(cfg.tag[i]);
+            // Only add AI point
+            if(cfg.tag[i].hw_name.find("BoardIO:AI") != std::string::npos) {
+                app::RealtimeData::instance()->add_point_value(cfg.tag[i]);
+            }
+        }
+
+        LREP("tag size: {}\n", app::tagmanager::instance()->tag_list_.size());
+    }
+    if(is_master) {
+        FtpManager::start(config_.server.address, 21,
+            config_.server.username, config_.server.passwd);
+        max_num_file_ = config_.server.max_hold;
+        local_folder_path_ = config_.server.data_path;
+    } else {
+        FtpManager::start(config_.server2.address, 21,
+            config_.server2.username, config_.server2.passwd);
+        max_num_file_ = config_.server2.max_hold;
+        local_folder_path_ = config_.server2.data_path;
+    }
+
+
     LREP("local_folder_path_ = {}\n", local_folder_path_);
 
     if(lib::filesystem::create_directories(local_folder_path_)) {
         LREP("create local path success\n");
     }
-
-    app::user_config cfg = app::userconfig::instance()->get_user_config();
-    tag_man_ = std::make_shared<tagmanager>(APP_SYSTEM_MAX_TAG);
-    for(int i = 0; i < APP_SYSTEM_MAX_TAG; i++) {
-        tag_man_->add_tag(cfg.tag[i]);
-        // Only add AI point
-        if(cfg.tag[i].hw_name.find("BoardIO:AI") != std::string::npos) {
-            app::RealtimeData::instance()->add_point_value(cfg.tag[i]);
-        }
-    }
-
-    FtpManager::start(config_.server.address, 21/*config_.server.port*/,
-          config_.server.username, config_.server.passwd);
-
-    LREP("tag size: {}\n", tag_man_->tag_list_.size());
 
     listen_run_ = true;
     listen_thread_ = std::thread([&](){
@@ -62,8 +76,10 @@ int Logger::start()
         thread_background();
     });
 
-
-    load_buff_file(lib::filesystem::current_path().string() + "/buffer.json");
+    if(is_master)
+        load_buff_file(lib::filesystem::current_path().string() + "/buffer.json");
+    else
+        load_buff_file(lib::filesystem::current_path().string() + "/buffer1.json");
 
     return 0;
 }
@@ -111,9 +127,9 @@ std::string Logger::get_current_time_cont()
 void Logger::read_tag_value()
 {
     //LREP("\r\nread tag: ");
-    tag_man_->scan_all_raw_inter_avg_value();
+    app::tagmanager::instance()->scan_all_raw_inter_avg_value();
 
-    for(auto &var : tag_man_->tag_list_) {
+    for(auto &var : app::tagmanager::instance()->tag_list_) {
         if(var->get_hw_name().find("BoardIO:AI") != std::string::npos &&
                 var->get_tag_enable()) {
             //LREP("process:{}\n", var->get_hw_name(), var->get_usr_name());
@@ -122,13 +138,13 @@ void Logger::read_tag_value()
             std::string status = "00";
             if(var->has_pin_calib() && var->has_pin_error())
             {
-                if(!tag_man_->get_raw_value_by_hwname(
+                if(!app::tagmanager::instance()->get_raw_value_by_hwname(
                             var->get_tag_pin_calib(),
                             value)) {
                     return;
                 }
                 value_calib = value;
-                if(!tag_man_->get_raw_value_by_hwname(
+                if(!app::tagmanager::instance()->get_raw_value_by_hwname(
                             var->get_tag_pin_error(),
                             value)) {
                     return;
@@ -163,7 +179,7 @@ void Logger::read_tag_value()
                     double o2_comp = var->get_o2_comp();
                     double o2_coeff = 1;
                     double get_value;
-                    if(tag_man_->get_inter_value_avg_stream_by_hwname(
+                    if(app::tagmanager::instance()->get_inter_value_avg_stream_by_hwname(
                                 var->get_o2_comp_hw_name(),
                                 get_value)) {
                         double den = 20.9 - get_value;
@@ -182,14 +198,14 @@ void Logger::read_tag_value()
                 double press_comp = var->get_press_comp();
                 double temp_comp = var->get_temp_comp();
                 double localvalue, temp_coeff = 1, press_coeff = 1;
-                if(tag_man_->get_inter_value_avg_stream_by_hwname(
+                if(app::tagmanager::instance()->get_inter_value_avg_stream_by_hwname(
                             var->get_press_comp_hw_name(),
                             localvalue)) {
                     if(localvalue != 0 && press_comp != 0)
                         press_coeff = press_comp / localvalue;
                 }
 
-                if(tag_man_->get_inter_value_avg_stream_by_hwname(
+                if(app::tagmanager::instance()->get_inter_value_avg_stream_by_hwname(
                             var->get_temp_comp_hw_name(),
                             localvalue)) {
                     if(((273 + localvalue) != 0) && ((273 + temp_comp) != 0))
@@ -226,7 +242,7 @@ void Logger::read_tag_value()
 
 void Logger::read_save_tag_value() {      
 
-    for(auto &var : tag_man_->tag_list_) {
+    for(auto &var : app::tagmanager::instance()->tag_list_) {
         if(var->get_hw_name().find("BoardIO:AI") != std::string::npos &&
                 var->get_tag_report()) {
             //LREP("process:{}\n", var->get_hw_name(), var->get_usr_name());
@@ -236,13 +252,13 @@ void Logger::read_save_tag_value() {
             std::string status = "00";
             if(var->has_pin_calib() && var->has_pin_error())
             {
-                if(!tag_man_->get_raw_value_by_hwname(
+                if(!app::tagmanager::instance()->get_raw_value_by_hwname(
                             var->get_tag_pin_calib(),
                             value)) {
                     return;
                 }
                 value_calib = value;
-                if(!tag_man_->get_raw_value_by_hwname(
+                if(!app::tagmanager::instance()->get_raw_value_by_hwname(
                             var->get_tag_pin_error(),
                             value)) {
                     return;
@@ -276,7 +292,7 @@ void Logger::read_save_tag_value() {
                     double o2_comp = var->get_o2_comp();
                     double get_value;
                     double o2_coeff = 1;
-                    if(tag_man_->get_inter_value_avg_report_by_hwname(
+                    if(app::tagmanager::instance()->get_inter_value_avg_report_by_hwname(
                                 var->get_o2_comp_hw_name(),
                                 get_value)) {
                         double den = 20.9 - get_value;
@@ -298,14 +314,14 @@ void Logger::read_save_tag_value() {
                 double press_comp = var->get_press_comp();
                 double temp_comp = var->get_temp_comp();
                 double localvalue, temp_coeff = 1, press_coeff = 1;
-                if(tag_man_->get_inter_value_avg_report_by_hwname(
+                if(app::tagmanager::instance()->get_inter_value_avg_report_by_hwname(
                             var->get_press_comp_hw_name(),
                             localvalue)) {
                     if(localvalue != 0 && press_comp != 0)
                         press_coeff = press_comp / localvalue;
                 }
 
-                if(tag_man_->get_inter_value_avg_report_by_hwname(
+                if(app::tagmanager::instance()->get_inter_value_avg_report_by_hwname(
                             var->get_temp_comp_hw_name(),
                             localvalue)) {
                     if(((273 + localvalue) != 0) && ((273 + temp_comp) != 0))
@@ -441,28 +457,92 @@ void Logger::logger_close()
     }
 }
 
+enum Log_Sm {
+    Log_Wait_Log_0 = 0,
+    Log_Wait_Log_30,
+};
+
 void Logger::thread_function()
 {
-    int log_min = (config_.server.log_dur) >= 1 ? (config_.server.log_dur) : 1;
-    int last_min = 0;
-    bool logged = false;
-    while(listen_run_) {
-        std::this_thread::sleep_for(1_s);
-        std::cout << "#"; fflush(stdout);
-        read_tag_value();        
-        get_current_time();
-        if(time_now_->tm_min != last_min && logged) {
-            logged = false;
-        }
+    if(is_master) {
+        int log_min = (config_.server.log_dur) >= 1 ? (config_.server.log_dur) : 1;
+        int last_min = 0;
+        bool logged = false;
+        while(listen_run_) {
+            std::this_thread::sleep_for(1_s);
+            std::cout << "#"; fflush(stdout);
 
-        if(logged == false && (time_now_->tm_min) % log_min == 0) {
-            FileDesc file = logger_create_logfile();
-            read_save_tag_value();
-            mutex_.lock();
-            add_buff_point(file);
-            mutex_.unlock();
-            last_min = time_now_->tm_min;
-            logged = true;
+            if(is_master)
+                read_tag_value();
+
+            get_current_time();
+            if(time_now_->tm_min != last_min && logged) {
+                logged = false;
+            }
+
+            if(logged == false && (time_now_->tm_min) % log_min == 0) {
+                FileDesc file = logger_create_logfile();
+                read_save_tag_value();
+                mutex_.lock();
+                add_buff_point(file);
+                mutex_.unlock();
+                last_min = time_now_->tm_min;
+                logged = true;
+            }
+        }
+    } else {
+        int log_min = (config_.server2.log_dur) >= 1 ? (config_.server2.log_dur) : 0;
+        int last_min = 0;
+        bool logged = false;
+        Log_Sm sm = Log_Wait_Log_0;
+        while(listen_run_) {
+            std::this_thread::sleep_for(1_s);
+            std::cout << "#"; fflush(stdout);
+
+            get_current_time();
+            if(log_min >= 1) {
+                if(time_now_->tm_min != last_min && logged) {
+                    logged = false;
+                }
+
+                if(logged == false && (time_now_->tm_min) % log_min == 0) {
+                    FileDesc file = logger_create_logfile();
+                    read_save_tag_value();
+                    mutex_.lock();
+                    add_buff_point(file);
+                    mutex_.unlock();
+                    last_min = time_now_->tm_min;
+                    logged = true;
+                }
+            } else {
+
+                switch (sm) {
+                case Log_Wait_Log_0:
+                    if(time_now_->tm_sec >= 0 && time_now_->tm_sec < 30) {
+                        logged = false;
+                        sm = Log_Wait_Log_30;
+                    }
+                    break;
+                case Log_Wait_Log_30:
+                    if(time_now_->tm_sec >= 30) {
+                        logged = false;
+                        sm = Log_Wait_Log_0;
+                    }
+                    break;
+                default:
+                    break;
+                }
+
+                if(logged == false) {
+                    FileDesc file = logger_create_logfile();
+                    read_save_tag_value();
+                    mutex_.lock();
+                    add_buff_point(file);
+                    mutex_.unlock();
+                    logged = true;
+                }
+
+            }
         }
     }
 }

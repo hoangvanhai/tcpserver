@@ -87,11 +87,15 @@ int main(int argc, char *argv[])
 
     app::user_config cfg_ = app::userconfig::instance()->get_user_config();
 
-    std::shared_ptr<app::client::Logger> logger =
+    std::shared_ptr<app::client::Logger> logger1 =
             std::make_shared<app::client::Logger>();
 
-    logger->start();
+    logger1->start(true);
 
+    std::shared_ptr<app::client::Logger> logger2 =
+            std::make_shared<app::client::Logger>();
+
+    logger2->start(false);
 
     std::shared_ptr<app::server::TcpServer> server =
             std::make_shared<app::server::TcpServer>();

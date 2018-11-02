@@ -24,7 +24,7 @@ struct ftp_server_info {
     std::string passwd;
     int         port;
     int         scan_dur;
-    int         log_dur;
+    double      log_dur;
     int         max_hold;
 };
 
@@ -82,6 +82,7 @@ struct io_name_bind {
 
 struct user_config{    
     ftp_server_info server;
+    ftp_server_info server2;
     ftp_file_name   filename;
     io_name_bind tag[APP_SYSTEM_MAX_TAG];
 };
@@ -101,8 +102,8 @@ public:
     void load_tag_config(const std::string &type, io_name_bind &tag, io_name_bind &def_val);
     void save_tag_config(const std::string &type, io_name_bind tag);
 
-    void load_ftp_server_config(ftp_server_info &server, ftp_server_info &def_val);
-    void save_ftp_server_config(const ftp_server_info &server);
+    void load_ftp_server_config(ftp_server_info &server, ftp_server_info &def_val, int idx = 0);
+    void save_ftp_server_config(const ftp_server_info &server, int idx = 0);
 
     void load_ftp_filename_config(ftp_file_name &filename, ftp_file_name &def_val);
     void save_ftp_filename_config(const ftp_file_name &filename);

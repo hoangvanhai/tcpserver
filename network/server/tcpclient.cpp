@@ -200,22 +200,28 @@ void TcpClient::process_raw_data(const void *data, int len)
             send_system_info();
         } else if(value["subtype"] == "set_system_info") {
             smsg = value["data"];
-            std::string ipaddress, netmask;
+            //std::string ipaddress, netmask;
 
             user_config cfg = app::userconfig::instance()->get_user_config();
             cfg.server.address = smsg["serverip"].asString();
             cfg.server.passwd = smsg["password"].asString();
-            //cfg.server.port = smsg["port"].asInt();
             cfg.server.username = smsg["username"].asString();
-            cfg.server.log_dur = smsg["logdur"].asInt();
-            ipaddress = smsg["ipaddress"].asString();
-            netmask = smsg["netmask"].asString();            
+            cfg.server.log_dur = smsg["logdur"].asDouble();
+
+            cfg.server2.address = smsg["serverip2"].asString();
+            cfg.server2.passwd = smsg["password2"].asString();
+            cfg.server2.username = smsg["username2"].asString();
+            cfg.server2.log_dur = smsg["logdur2"].asDouble();
+
+
+//            ipaddress = smsg["ipaddress"].asString();
+//            netmask = smsg["netmask"].asString();
 
             cfg.filename.tentinh = smsg["tinh"].asString();
             cfg.filename.tencoso = smsg["coso"].asString();
             cfg.filename.tentram = smsg["tram"].asString();
 
-            set_network(false, ipaddress, netmask);
+//            set_network(false, ipaddress, netmask);
 
             app::userconfig::instance()->save_user_config(cfg);           
             send_status_message("set_system_info", "success", "save tag param success");
@@ -273,7 +279,7 @@ void TcpClient::process_raw_data(const void *data, int len)
                 LREP("tag id not number\n");
             }
         } else if(value["subtype"] == "system_reboot") {
-            //exit(0);
+            exit(0);
             sync();
             setuid(0);
             reboot(RB_AUTOBOOT);
@@ -638,6 +644,12 @@ void TcpClient::send_system_info()
     sysinfo["username"] = config.server.username;
     sysinfo["password"] = config.server.passwd;
     sysinfo["logdur"] = config.server.log_dur;
+
+    sysinfo["serverip2"] = config.server2.address;
+    sysinfo["port2"] = config.server2.port;
+    sysinfo["username2"] = config.server2.username;
+    sysinfo["password2"] = config.server2.passwd;
+    sysinfo["logdur2"] = config.server2.log_dur;
 
     root["data"] = sysinfo;
 

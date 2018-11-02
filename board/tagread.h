@@ -9,7 +9,7 @@
 #include <vector>
 #include <configuration.h>
 
-#define COMPILE_ADAM3600        0
+#define COMPILE_ADAM3600        1
 
 
 #if COMPILE_ADAM3600 == 1
@@ -101,9 +101,9 @@ private:
 };
 
 
-class tagmanager {
+class tagmanager : public lib::pattern::singleton<tagmanager>
+{
 public:
-    tagmanager(int numtag = 1);
     ~tagmanager();
 
     void deinit_all_tag() {
@@ -112,7 +112,7 @@ public:
         #endif
     }
 
-
+    void set_num_tag(int numtag) {num_tag_ = numtag;}
     bool add_tag(io_name_bind config);
     bool get_inter_value_by_username(const std::string &name, double &value);
     bool get_inter_value_avg_by_username(const std::string &name, double &value);

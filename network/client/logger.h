@@ -49,7 +49,7 @@ public:
     Logger();
     ~Logger(){stop();}
 
-    int start();
+    int start(bool master);
     void stop();
 
 
@@ -77,8 +77,6 @@ public:
     void save_buff_file();
 
 private:
-    std::shared_ptr<tagmanager> tag_man_;
-
     std::tm *time_now_;
     std::shared_ptr<lib::datalog::CSVFile> loader_;
     std::string local_folder_path_;
@@ -88,11 +86,13 @@ private:
     std::thread backgnd_thread_;
     volatile bool backgnd_run_;
 
-    app::user_config config_;    
+    app::user_config config_;
+    int             log_duration_second;
     std::mutex mutex_;
     std::string file_name_;
     Json::Value root_;
     int         max_num_file_;
+    bool        is_master;
 };
 
 
