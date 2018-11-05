@@ -224,6 +224,10 @@ void Logger::read_tag_value()
 
             if(inter_value < 0) inter_value = 0;
             if(final_value < 0) final_value = 0;
+            if(status == "01" || status == "02") {
+                inter_value = 0;
+                final_value = 0;
+            }
 
 
             //LREP("cal type: {} final: {} \n", cal_type, final_value);
@@ -243,8 +247,13 @@ void Logger::read_tag_value()
 void Logger::read_save_tag_value() {      
 
     for(auto &var : app::tagmanager::instance()->tag_list_) {
-        if(var->get_hw_name().find("BoardIO:AI") != std::string::npos &&
-                var->get_tag_report()) {
+        bool tag_report;
+        if(is_master)
+            tag_report = var->get_tag_report();
+        else
+            tag_report = var->get_tag_report2();
+
+        if(var->get_hw_name().find("BoardIO:AI") != std::string::npos && tag_report) {
             //LREP("process:{}\n", var->get_hw_name(), var->get_usr_name());
             std::vector<std::string> vect;
             double value_calib, value_error;
@@ -279,6 +288,7 @@ void Logger::read_save_tag_value() {
 
             std::string tag_name, tag_value, tag_unit, tag_time;
             double final_value, inter_value;
+            bool cal_revert = var->get_final_cal_revert();
             switch(var->get_final_cal_type()) {
             case 0:
                 tag_unit = "\t" + var->get_tag_final_unit();
@@ -303,7 +313,10 @@ void Logger::read_save_tag_value() {
                         WARN("hw name not found {}\r\n", var->get_o2_comp_hw_name());
                     }
 
-                    final_value = inter_value * o2_coeff;
+                    if(!cal_revert)
+                        final_value = inter_value * o2_coeff;
+                    else
+                        final_value = inter_value / o2_coeff;
 
                     WARN("{} O2 COMP: inter value = {}, final value = {} o2_comp: {} \r\n", var->get_usr_name(), inter_value, final_value, o2_comp);
                 }
@@ -328,7 +341,10 @@ void Logger::read_save_tag_value() {
                         temp_coeff = (273 + temp_comp) / (273 + localvalue);
                 }
 
-                final_value = inter_value * temp_coeff * press_coeff;
+                if(!cal_revert)
+                    final_value = inter_value * temp_coeff * press_coeff;
+                else
+                    final_value = inter_value / (temp_coeff * press_coeff);
 
                 WARN("{} T-P COMP: inter value = {}, final value = {} t-comp: {} p-comp: {} \r\n", var->get_usr_name(),
                      inter_value, final_value, temp_comp, press_comp);
@@ -339,6 +355,9 @@ void Logger::read_save_tag_value() {
             }
 
             if(final_value < 0) final_value = 0;
+            if(status == "01" || status == "02") {
+                final_value = 0;
+            }
 
             tag_value = "\t" + std::to_string(final_value);
 

@@ -43,6 +43,7 @@ enum StdCondType {
 struct io_name_bind {
     bool        enable;
     bool        report;
+    bool        report2;
     bool        cal_revert;
     bool        alarm_enable;
     StdCondType final_type;

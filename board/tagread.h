@@ -63,7 +63,8 @@ public:
 
     bool    get_tag_enable()    const {return io_bind_.enable;}        
 
-    bool    get_tag_report()    const {return io_bind_.report;}
+    bool    get_tag_report()    const {return io_bind_.report;}    
+    bool    get_tag_report2()    const {return io_bind_.report2;}
 
 
     void    cal_inter_value_avg_report();
@@ -112,7 +113,7 @@ public:
         #endif
     }
 
-    void set_num_tag(int numtag) {num_tag_ = numtag;}
+    void set_num_tag(int numtag);
     bool add_tag(io_name_bind config);
     bool get_inter_value_by_username(const std::string &name, double &value);
     bool get_inter_value_avg_by_username(const std::string &name, double &value);

@@ -244,6 +244,7 @@ void TcpClient::process_raw_data(const void *data, int len)
                 smsg = value["data"];
                 user_config cfg = app::userconfig::instance()->get_user_config();
                 cfg.tag[tag + 12].report = smsg["report"].asBool();
+                cfg.tag[tag + 12].report2 = smsg["report2"].asBool();
                 cfg.tag[tag + 12].cal_revert = smsg["cal_revert"].asBool();
                 cfg.tag[tag + 12].alarm_enable = smsg["alarm_en"].asBool();
                 cfg.tag[tag + 12].user_name = smsg["sw"].asString();
@@ -580,6 +581,7 @@ void TcpClient::send_tag_info(int tag)
     root["tag_id"] = tag;
 
     value["report"] = config.tag[tag + 12].report;
+    value["report2"] = config.tag[tag + 12].report2;
     value["sw"] = config.tag[tag + 12].user_name;
     value["inter_unit"] = config.tag[tag + 12].inter_unit;
     value["final_unit"] = config.tag[tag + 12].final_unit;

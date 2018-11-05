@@ -107,6 +107,7 @@ bool userconfig::load_config()
         io_name_bind def;
         def.enable = true;
         def.report = true;
+        def.report2 = true;
         def.alarm_enable = true;
         def.cal_revert = false;
         if(i <= 7) {
@@ -222,6 +223,7 @@ void userconfig::load_tag_config(const std::string &type, io_name_bind &tag, io_
     if(try_get_object(root_, type, value)) {
         tag.enable          = value["enable"].asBool();
         tag.report          = value["report"].asBool();
+        tag.report2          = value["report2"].asBool();
         tag.cal_revert      = value["cal_revert"].asBool();
         tag.alarm_enable    = value["alarm_en"].asBool();
         tag.final_type      = StdCondType(value["final_type"].asInt());
@@ -254,6 +256,7 @@ void userconfig::load_tag_config(const std::string &type, io_name_bind &tag, io_
     } else {
         value["enable"]     = def_val.enable;
         value["report"]     = def_val.report;
+        value["report2"]     = def_val.report2;
         value["cal_revert"] = def_val.cal_revert;
         value["alarm_en"]   = def_val.alarm_enable;
         value["final_type"] = def_val.final_type;
@@ -296,6 +299,7 @@ void userconfig::save_tag_config(const std::string &type, io_name_bind tag)
     try_get_object(root_, type, value);
     value["enable"]     = tag.enable;
     value["report"]     = tag.report;
+    value["report2"]    = tag.report2;
     value["cal_revert"] = tag.cal_revert;
     value["alarm_en"]   = tag.alarm_enable;
     value["final_type"] = tag.final_type;

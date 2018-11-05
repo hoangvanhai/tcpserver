@@ -130,6 +130,17 @@ tagmanager::~tagmanager()
     deinit_all_tag();
 }
 
+void tagmanager::set_num_tag(int numtag) {
+    num_tag_ = numtag;
+    int err;
+    err = api_tag_init(num_tag_, 0, 0);
+    if(err) {
+        std::cout << "dc tag init error " << err << std::endl;
+    } else {
+        std::cout << "dc tag init success\n";
+    }
+}
+
 bool tagmanager::add_tag(io_name_bind config)
 {
     if(tag_list_.size() >= num_tag_) {
