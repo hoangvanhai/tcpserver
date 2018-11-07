@@ -444,7 +444,8 @@ void Logger::thread_background()
                     mutex_.unlock();
                     LREP("remove file name: {}\n", file.file_name);                    
                 } else {
-                    //ERR("stor file failed err = {}\n", err);
+                    ERR("stor file failed err = {}\n", err);
+                    TcpClientSock::stop();
                 }
             } else {
                 ERR("can not get file info when list not empty {}", 1);

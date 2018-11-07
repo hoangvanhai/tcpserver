@@ -27,7 +27,7 @@ int FtpManager::start(const std::string &iaddress, int iport,
 
 int FtpManager::stop()
 {
-    LREP("stop ftp manager\n");
+    LREP("stop ftp manager\n");    
     return 0;
 }
 
