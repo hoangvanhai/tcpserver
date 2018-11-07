@@ -246,7 +246,7 @@ bool UserManager::createDefaultRecord()
 {
     std::cout << "careate default record\r\n";
     if(!checkUserExisted("root")) {
-        if(!addUser("Vatcom", "root", "supperuser"))
+        if(!addUser("Vatcom", "root", "service"))
             std::cout << "add account root failed \n";
     } else {
         std::cout << "account root is existed\n";

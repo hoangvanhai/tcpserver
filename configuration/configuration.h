@@ -18,6 +18,7 @@
 namespace app {
 
 struct ftp_server_info {
+    bool        enable;
     std::string data_path;
     std::string address;
     std::string username;

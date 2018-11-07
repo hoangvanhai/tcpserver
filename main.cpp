@@ -87,15 +87,33 @@ int main(int argc, char *argv[])
 
     app::user_config cfg_ = app::userconfig::instance()->get_user_config();
 
+    app::tagmanager::instance()->set_num_tag(APP_SYSTEM_MAX_TAG);
+    for(int i = 0; i < APP_SYSTEM_MAX_TAG; i++) {
+        app::tagmanager::instance()->add_tag(cfg_.tag[i]);
+        // Only add AI point
+        if(cfg_.tag[i].hw_name.find("BoardIO:AI") != std::string::npos) {
+            app::RealtimeData::instance()->add_point_value(cfg_.tag[i]);
+        }
+    }
+
+    LREP("tag size: {}\n", app::tagmanager::instance()->tag_list_.size());
+
+
+
     std::shared_ptr<app::client::Logger> logger1 =
             std::make_shared<app::client::Logger>();
 
-    logger1->start(true);
+    //if(cfg_.server.enable)
+    {
+        logger1->start(true);
+    }
 
     std::shared_ptr<app::client::Logger> logger2 =
             std::make_shared<app::client::Logger>();
 
-    logger2->start(false);
+    if(cfg_.server2.enable) {
+        logger2->start(false);
+    }
 
     std::shared_ptr<app::server::TcpServer> server =
             std::make_shared<app::server::TcpServer>();
@@ -105,119 +123,11 @@ int main(int argc, char *argv[])
     std::shared_ptr<app::client::TcpClient> tcpclient =
             std::make_shared<app::client::TcpClient>();
 
-
-
-    //std::string ip, netmask, broadcast;
-    //app::server::TcpClient::get_if_ipaddress("enp7s0", ip, netmask, broadcast);
-
-    //LREP("ipaddress {} netmask {} broadcast {}\n", ip, netmask, broadcast);
-
-    LREP("curr path = {}\r\n", lib::filesystem::current_path().string());
-
-//    std::string test = "";
-//    std::string last = std::string((char*)(&test.back()));
-//    LREP("last is: {} \n", last);
-
     std::string line;
     std::vector<std::string> vect;
     while(keep_running) {
         std::this_thread::sleep_for(1_s);
-        /*
-        std::cout << "cmd>";
-        getline(std::cin, line);
-
-        if(line != "") {
-
-            lib::string::split(line, " ", vect);
-
-            if(vect.at(0) == "start") {
-                if(tcpclient->start("127.0.0.1", 12345)) {
-                    tcpclient->set_recv_event([&](const void* data, int len) {
-                        char *sdata = (char*)data;
-                        Json::Reader reader;
-                        Json::Value value;
-                        reader.parse((const char*)data, (const char*)(sdata + len - 1), value);
-                        std::cout << value << std::endl;
-                    });
-                }
-
-            } else if(vect.at(0) == "login") {
-                if(vect.size() >= 3) {
-                    Json::Value root, data;
-                    root["type"] = "login";
-                    data["username"] = vect.at(1);
-                    data["password"] = vect.at(2);
-                    root["data"] = data;
-                    std::cout << root << std::endl;
-                    Json::FastWriter fast_writer;
-                    std::string msg = fast_writer.write(root);
-                    tcpclient->send_data(msg.c_str(), (int)msg.size());
-                }
-
-            } else if(vect.at(0) == "logout") {
-                Json::Value root;
-                root["type"] = "logout";
-                std::cout << root << std::endl;
-                Json::FastWriter fast_writer;
-                std::string msg = fast_writer.write(root);
-                tcpclient->send_data(msg.c_str(), (int)msg.size());
-            } else if(vect.at(0) == "adduser") {
-                if(vect.size() >= 4) {
-                    Json::Value root, data;
-                    root["type"] = "add_user";
-                    data["username"] = vect.at(1);
-                    data["password"] = vect.at(2);
-                    data["role"] = vect.at(3);
-                    root["data"] = data;
-                    std::cout << root << std::endl;
-                    Json::FastWriter fast_writer;
-                    std::string msg = fast_writer.write(root);
-                    tcpclient->send_data(msg.c_str(), (int)msg.size());
-                }
-            } else if(vect.at(0) == "deluser") {
-                if(vect.size() >= 2) {
-                    Json::Value root, data;
-                    root["type"] = "del_user";
-                    data["username"] = vect.at(1);
-                    root["data"] = data;
-                    std::cout << root << std::endl;
-                    Json::FastWriter fast_writer;
-                    std::string msg = fast_writer.write(root);
-                    tcpclient->send_data(msg.c_str(), (int)msg.size());
-                }
-            } else if(vect.at(0) == "changepw") { //change pw for current user
-                if(vect.size() >= 3) {
-                    Json::Value root, data;
-                    root["type"] = "change_password";
-                    data["oldpassword"] = vect.at(1);
-                    data["newpassword"] = vect.at(2);
-                    root["data"] = data;
-                    std::cout << root << std::endl;
-                    Json::FastWriter fast_writer;
-                    std::string msg = fast_writer.write(root);
-                    tcpclient->send_data(msg.c_str(), (int)msg.size());
-                }
-            } else if(vect.at(0) == "reset") {
-                if(vect.size() >= 2) {
-                    Json::Value root, data;
-                    root["type"] = "reset_password";
-                    data["username"] = vect.at(1);
-                    root["data"] = data;
-                    std::cout << root << std::endl;
-                    Json::FastWriter fast_writer;
-                    std::string msg = fast_writer.write(root);
-                    tcpclient->send_data(msg.c_str(), (int)msg.size());
-                }
-            } else if(vect.at(0) == "list") {
-                UsersLogin::instance()->listAllAccount();
-            }
-
-            if(line == "q")
-                break;
-        }
-        */
-
-
+        app::tagmanager::instance()->scan_all_raw_inter_avg_value();
     }
 
 

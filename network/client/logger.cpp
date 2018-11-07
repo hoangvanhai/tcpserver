@@ -30,23 +30,8 @@ int Logger::start(bool master)
 
     LREP("pwd = {}\n", cwd);
 
-
-
     is_master = master;
-    if(is_master) {
 
-        app::user_config cfg = app::userconfig::instance()->get_user_config();
-        app::tagmanager::instance()->set_num_tag(APP_SYSTEM_MAX_TAG);
-        for(int i = 0; i < APP_SYSTEM_MAX_TAG; i++) {
-            app::tagmanager::instance()->add_tag(cfg.tag[i]);
-            // Only add AI point
-            if(cfg.tag[i].hw_name.find("BoardIO:AI") != std::string::npos) {
-                app::RealtimeData::instance()->add_point_value(cfg.tag[i]);
-            }
-        }
-
-        LREP("tag size: {}\n", app::tagmanager::instance()->tag_list_.size());
-    }
     if(is_master) {
         FtpManager::start(config_.server.address, 21,
             config_.server.username, config_.server.passwd);
@@ -127,7 +112,7 @@ std::string Logger::get_current_time_cont()
 void Logger::read_tag_value()
 {
     //LREP("\r\nread tag: ");
-    app::tagmanager::instance()->scan_all_raw_inter_avg_value();
+//    app::tagmanager::instance()->scan_all_raw_inter_avg_value();
 
     for(auto &var : app::tagmanager::instance()->tag_list_) {
         if(var->get_hw_name().find("BoardIO:AI") != std::string::npos &&
@@ -355,7 +340,7 @@ void Logger::read_save_tag_value() {
             }
 
             if(final_value < 0) final_value = 0;
-            if(status == "01" || status == "02") {
+            if(status == "\t01" || status == "\t02") {
                 final_value = 0;
             }
 
@@ -493,6 +478,9 @@ void Logger::thread_function()
 
             if(is_master)
                 read_tag_value();
+
+            if(!config_.server.enable)
+                continue;
 
             get_current_time();
             if(time_now_->tm_min != last_min && logged) {

@@ -203,19 +203,20 @@ void TcpClient::process_raw_data(const void *data, int len)
             //std::string ipaddress, netmask;
 
             user_config cfg = app::userconfig::instance()->get_user_config();
+            cfg.server.enable  = smsg["enable"].asBool();
             cfg.server.address = smsg["serverip"].asString();
             cfg.server.passwd = smsg["password"].asString();
             cfg.server.username = smsg["username"].asString();
             cfg.server.log_dur = smsg["logdur"].asDouble();
 
+            cfg.server2.enable  = smsg["enable2"].asBool();
             cfg.server2.address = smsg["serverip2"].asString();
             cfg.server2.passwd = smsg["password2"].asString();
             cfg.server2.username = smsg["username2"].asString();
             cfg.server2.log_dur = smsg["logdur2"].asDouble();
 
 
-//            ipaddress = smsg["ipaddress"].asString();
-//            netmask = smsg["netmask"].asString();
+
 
             cfg.filename.tentinh = smsg["tinh"].asString();
             cfg.filename.tencoso = smsg["coso"].asString();
@@ -337,7 +338,7 @@ void TcpClient::process_raw_data(const void *data, int len)
         user_name_.clear();
         send_status_message("logout", "success", "user logged out");
     } else if(value["type"] == "add_user") {
-        if(logged_in_ && (role_ == "supperuser" || role_ == "admin")) {
+        if(logged_in_ && (role_ == "service" || role_ == "admin")) {
             if(value["data"] != "") {
                 smsg = value["data"];
                 if(UsersLogin::instance()->addUser(smsg["username"].asString(),
@@ -641,12 +642,14 @@ void TcpClient::send_system_info()
     sysinfo["coso"] = config.filename.tencoso;
     sysinfo["tram"] = config.filename.tentram;
 
+    sysinfo["enable"] = config.server.enable;
     sysinfo["serverip"] = config.server.address;
     sysinfo["port"] = config.server.port;
     sysinfo["username"] = config.server.username;
     sysinfo["password"] = config.server.passwd;
     sysinfo["logdur"] = config.server.log_dur;
 
+    sysinfo["enable2"] = config.server2.enable;
     sysinfo["serverip2"] = config.server2.address;
     sysinfo["port2"] = config.server2.port;
     sysinfo["username2"] = config.server2.username;
