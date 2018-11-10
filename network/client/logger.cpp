@@ -49,8 +49,7 @@ int Logger::start(bool master)
     for(int i = 0; i < APP_SYSTEM_MAX_TAG; i++) {
         // Only add AI point
         if(config_.tag[i].hw_name.find("BoardIO:AI") != std::string::npos) {
-            //std::shared_ptr<AvgValue> avg = std::make_shared<AvgValue>(config_.tag[i].hw_name);
-            AvgValue avg(config_.tag[i].hw_name);
+            std::shared_ptr<AvgValue> avg = std::make_shared<AvgValue>(config_.tag[i].hw_name);
             avg_list_.push_back(avg);
         }
     }
@@ -132,12 +131,14 @@ void Logger::read_tag_value()
             final_value = var->get_final_value();
             inter_value = var->get_inter_value();
 
-            app::RealtimeData::instance()->set_all_value(
+            if(is_master) {
+                app::RealtimeData::instance()->set_all_value(
                         var->get_hw_name(),
                         final_value, inter_value, status);
+            }
 
             if(status != "01" && status != "02") {
-                //avg_push_value_by_hwname(var->get_hw_name(), final_value, inter_value);
+                avg_push_value_by_hwname(var->get_hw_name(), final_value, inter_value);
             } else {
                 std::cout << "not push status = " << status;
             }
@@ -160,13 +161,11 @@ void Logger::read_save_tag_value() {
         if(var->get_hw_name().find("BoardIO:AI") != std::string::npos && tag_report) {            
             std::vector<std::string> vect;
             double final_value = 0, inter_value = 0;
-//            if(!avg_get_value_by_hwname(var->get_hw_name(), final_value, inter_value))
-//            {
-//                WARN("not get data from: {}\r\n", var->get_hw_name());
-//                final_value = 0;
-//            }
-            final_value = var->get_final_value();
-            LREP("final value = {}\n", final_value);
+            if(!avg_get_value_by_hwname(var->get_hw_name(), final_value, inter_value))
+            {
+                WARN("not get data from: {}\r\n", var->get_hw_name());
+                final_value = 0;
+            }
             std::string status = var->get_status();
             status = "\t" + status;
             std::string tag_value = "\t" + convert_precs(final_value, 2);
@@ -295,8 +294,7 @@ void Logger::thread_function()
             std::this_thread::sleep_for(1_s);
             std::cout << "#"; fflush(stdout);
 
-            if(is_master)
-                read_tag_value();
+            read_tag_value();
 
             if(!config_.server.enable)
                 continue;
@@ -324,6 +322,8 @@ void Logger::thread_function()
         while(listen_run_) {
             std::this_thread::sleep_for(1_s);
             std::cout << "#"; fflush(stdout);
+
+            read_tag_value();
 
             get_current_time();
             if(log_min >= 1) {
@@ -547,12 +547,15 @@ void Logger::save_buff_file() {
     }
 }
 
+
+
+
 bool Logger::avg_push_value_by_hwname(const std::string &name,
                                       double final_value, double inter_value)
 {
     for(auto &var : avg_list_) {
-        if(var.get_name() == name) {
-            var.push_value(final_value, inter_value);
+        if(var->get_name() == name) {
+            var->push_value(final_value, inter_value);
             return true;
         }
     }
@@ -563,8 +566,8 @@ bool Logger::avg_get_value_by_hwname(const std::string &name,
                                      double &final_value, double &inter_value)
 {
     for(auto &var : avg_list_) {
-        if(var.get_name() == name) {
-            var.get_value(final_value, inter_value);
+        if(var->get_name() == name) {
+            var->get_value(final_value, inter_value);
             return true;
         }
     }
@@ -592,23 +595,17 @@ void AvgValue::push_value(double final, double inter) {
     inter_value_total += inter;
     final_value_curr = final;
     inter_value_curr = inter;
-    cal_time += 1;
-    LREP("push final = {} inter = {} cal = {} name {}\n",
-         final_value_total, inter_value_total, cal_time , hw_name);
+    cal_time += 1;    
 }
 
 void AvgValue::get_value(double &final, double &inter) {
     if(cal_time >= 1) {
         final_value_avg = final_value_total / (double)cal_time;
-        inter_value_avg = inter_value_total / (double)cal_time;
-        ERR("get final = {} inter = {} cal time {} {}\n", final_value_avg,
-            inter_value_avg, cal_time, hw_name);
+        inter_value_avg = inter_value_total / (double)cal_time;        
         cal_time = 0;
     } else {
         final_value_avg = final_value_curr;
-        inter_value_avg = inter_value_curr;
-        ERR(" cal time  = 0 get final = {} inter = {} cal time {} {}\n", final_value_avg,
-            inter_value_avg, cal_time, hw_name);
+        inter_value_avg = inter_value_curr;        
     }
 
     final = final_value_avg;

@@ -124,7 +124,7 @@ private:
     int         max_num_file_;
     bool        is_master;
 
-    std::vector<AvgValue>       avg_list_;
+    std::vector<std::shared_ptr<AvgValue>>       avg_list_;
 };
 
 
