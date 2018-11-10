@@ -4,6 +4,7 @@
 #include <cpp_lib/typedef.h>
 #include <cpp_lib/rand.h>
 
+
 namespace app {
 namespace client {
 
@@ -19,7 +20,7 @@ Logger::Logger() {
 }
 
 int Logger::start(bool master)
-{    
+{            
     config_ = app::userconfig::instance()->get_user_config();
     std::string cwd = pwd();
     cwd = lib::string::trim(cwd, '\r');
@@ -62,9 +63,9 @@ int Logger::start(bool master)
     });
 
     if(is_master)
-        load_buff_file(lib::filesystem::current_path().string() + "/buffer.json");
+        load_buff_file("/buffer.json");
     else
-        load_buff_file(lib::filesystem::current_path().string() + "/buffer1.json");
+        load_buff_file("/buffer1.json");
 
     return 0;
 }
@@ -224,8 +225,6 @@ void Logger::read_tag_value()
         } else {
         }
     }
-
-
 }
 
 
@@ -344,7 +343,7 @@ void Logger::read_save_tag_value() {
                 final_value = 0;
             }
 
-            tag_value = "\t" + std::to_string(final_value);
+            tag_value = "\t" + convert_precs(final_value, 2);
 
             tag_name = var->get_usr_name();
             tag_time = get_current_time_cont();
@@ -726,6 +725,14 @@ void Logger::save_buff_file() {
     } else {
         std::cout << "can't open file: " << file_name_ << std::endl;
     }
+}
+
+std::string Logger::convert_precs(double value, int precs)
+{
+    std::stringstream ss;
+    ss << std::fixed << std::setprecision(precs) << value;
+    std::string mystring = ss.str();
+    return mystring;
 }
 
 

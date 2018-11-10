@@ -76,6 +76,8 @@ public:
     int  get_buff_size() const {return root_.size();}
     void save_buff_file();
 
+    std::string convert_precs(double value, int precs);
+
 private:
     std::tm *time_now_;
     std::shared_ptr<lib::datalog::CSVFile> loader_;

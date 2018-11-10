@@ -10,7 +10,8 @@ UserManager::UserManager()
 {
 
     int rc;
-    std::string full_path = lib::filesystem::current_path().string() + FILE_PATH_INFO_LC;
+    //std::string full_path = lib::filesystem::current_path().string() + FILE_PATH_INFO_LC;
+    std::string full_path = FILE_PATH_INFO_LC;
     bool exist = fileExists(full_path);
     if(exist) {
         std::cout << "file existed !\r\n";
@@ -246,7 +247,7 @@ bool UserManager::createDefaultRecord()
 {
     std::cout << "careate default record\r\n";
     if(!checkUserExisted("root")) {
-        if(!addUser("Vatcom", "root", "service"))
+        if(!addUser("Vatcom", "V@tcom!", "service"))
             std::cout << "add account root failed \n";
     } else {
         std::cout << "account root is existed\n";

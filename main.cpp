@@ -71,7 +71,6 @@ int main(int argc, char *argv[])
 
 
 
-
     struct sigaction act;
     act.sa_handler = sigal_handler;
     sigaction(SIGINT, &act, NULL);
@@ -98,7 +97,16 @@ int main(int argc, char *argv[])
 
     LREP("tag size: {}\n", app::tagmanager::instance()->tag_list_.size());
 
+//    double value = 3.1415;
+    //std::string value_str = lib::string::format("%.2f", value);
 
+
+//    std::stringstream ss;
+//    ss << std::fixed << std::setprecision(2) << value;
+//    std::string mystring = ss.str();
+
+
+//    ERR("str = {}\r\n", mystring);
 
     std::shared_ptr<app::client::Logger> logger1 =
             std::make_shared<app::client::Logger>();
