@@ -46,6 +46,16 @@ int Logger::start(bool master)
     }
 
 
+    for(int i = 0; i < APP_SYSTEM_MAX_TAG; i++) {
+        // Only add AI point
+        if(config_.tag[i].hw_name.find("BoardIO:AI") != std::string::npos) {
+            //std::shared_ptr<AvgValue> avg = std::make_shared<AvgValue>(config_.tag[i].hw_name);
+            AvgValue avg(config_.tag[i].hw_name);
+            avg_list_.push_back(avg);
+        }
+    }
+
+
     LREP("local_folder_path_ = {}\n", local_folder_path_);
 
     if(lib::filesystem::create_directories(local_folder_path_)) {
@@ -112,115 +122,25 @@ std::string Logger::get_current_time_cont()
 
 void Logger::read_tag_value()
 {
-    //LREP("\r\nread tag: ");
-//    app::tagmanager::instance()->scan_all_raw_inter_avg_value();
-
     for(auto &var : app::tagmanager::instance()->tag_list_) {
         if(var->get_hw_name().find("BoardIO:AI") != std::string::npos &&
                 var->get_tag_enable()) {
-            //LREP("process:{}\n", var->get_hw_name(), var->get_usr_name());
-            double value_calib, value_error;
-            double value;
-            std::string status = "00";
-            if(var->has_pin_calib() && var->has_pin_error())
-            {
-                if(!app::tagmanager::instance()->get_raw_value_by_hwname(
-                            var->get_tag_pin_calib(),
-                            value)) {
-                    return;
-                }
-                value_calib = value;
-                if(!app::tagmanager::instance()->get_raw_value_by_hwname(
-                            var->get_tag_pin_error(),
-                            value)) {
-                    return;
-                }
-                value_error = value;
 
+            double final_value, inter_value;
+            std::string status = var->get_status();
 
-                if(value_error > 0) {
-                    status = "02";
-                } else {
-                    if(value_calib > 0) {
-                        status = "01";
-                    } else {
-                        status = "00";
-                    }
-                }
-                //LREP("status = {}\n", status);
-            } else {
-                //LREP("no calib - error pin\n");
-            }
-
-            double final_value = 0, inter_value = 0;
-            int cal_type = var->get_final_cal_type();
-            bool cal_revert = var->get_final_cal_revert();
-            switch(cal_type) {
-            case 0:
-                inter_value = var->get_inter_value_avg_stream();
-                final_value = inter_value;
-                break;
-            case 1: {
-                    inter_value = var->get_inter_value_avg_stream();
-                    double o2_comp = var->get_o2_comp();
-                    double o2_coeff = 1;
-                    double get_value;
-                    if(app::tagmanager::instance()->get_inter_value_avg_stream_by_hwname(
-                                var->get_o2_comp_hw_name(),
-                                get_value)) {
-                        double den = 20.9 - get_value;
-                        if((20.9 - get_value) != 0  && (20.9 - o2_comp) != 0) {
-                            o2_coeff =  ((20.9 - o2_comp) / den);
-                        }
-                    }
-                    if(!cal_revert)
-                        final_value = o2_coeff * inter_value;
-                    else
-                        final_value = inter_value / o2_coeff;
-                }
-                break;
-            case 2: {
-                inter_value = var->get_inter_value_avg_stream();
-                double press_comp = var->get_press_comp();
-                double temp_comp = var->get_temp_comp();
-                double localvalue, temp_coeff = 1, press_coeff = 1;
-                if(app::tagmanager::instance()->get_inter_value_avg_stream_by_hwname(
-                            var->get_press_comp_hw_name(),
-                            localvalue)) {
-                    if(localvalue != 0 && press_comp != 0)
-                        press_coeff = press_comp / localvalue;
-                }
-
-                if(app::tagmanager::instance()->get_inter_value_avg_stream_by_hwname(
-                            var->get_temp_comp_hw_name(),
-                            localvalue)) {
-                    if(((273 + localvalue) != 0) && ((273 + temp_comp) != 0))
-                        temp_coeff = (273 + localvalue) / (273 + temp_comp);
-                }
-
-                if(!cal_revert)
-                    final_value = inter_value * temp_coeff * press_coeff;
-                else
-                    final_value = inter_value / (temp_coeff * press_coeff);
-            }
-                break;
-            default:
-                break;
-            }
-
-            if(inter_value < 0) inter_value = 0;
-            if(final_value < 0) final_value = 0;
-            if(status == "01" || status == "02") {
-                inter_value = 0;
-                final_value = 0;
-            }
-
-
-            //LREP("cal type: {} final: {} \n", cal_type, final_value);
+            final_value = var->get_final_value();
+            inter_value = var->get_inter_value();
 
             app::RealtimeData::instance()->set_all_value(
                         var->get_hw_name(),
                         final_value, inter_value, status);
+
+            if(status != "01" && status != "02") {
+                //avg_push_value_by_hwname(var->get_hw_name(), final_value, inter_value);
+            } else {
+                std::cout << "not push status = " << status;
+            }
 
         } else {
         }
@@ -237,128 +157,28 @@ void Logger::read_save_tag_value() {
         else
             tag_report = var->get_tag_report2();
 
-        if(var->get_hw_name().find("BoardIO:AI") != std::string::npos && tag_report) {
-            //LREP("process:{}\n", var->get_hw_name(), var->get_usr_name());
+        if(var->get_hw_name().find("BoardIO:AI") != std::string::npos && tag_report) {            
             std::vector<std::string> vect;
-            double value_calib, value_error;
-            double value;
-            std::string status = "00";
-            if(var->has_pin_calib() && var->has_pin_error())
-            {
-                if(!app::tagmanager::instance()->get_raw_value_by_hwname(
-                            var->get_tag_pin_calib(),
-                            value)) {
-                    return;
-                }
-                value_calib = value;
-                if(!app::tagmanager::instance()->get_raw_value_by_hwname(
-                            var->get_tag_pin_error(),
-                            value)) {
-                    return;
-                }
-                value_error = value;
-
-
-                if(value_error > 0) {
-                    status = "\t02";
-                } else {
-                    if(value_calib > 0) {
-                        status = "\t01";
-                    } else {
-                        status = "\t00";
-                    }
-                }
-            }
-
-            std::string tag_name, tag_value, tag_unit, tag_time;
-            double final_value, inter_value;
-            bool cal_revert = var->get_final_cal_revert();
-            switch(var->get_final_cal_type()) {
-            case 0:
-                tag_unit = "\t" + var->get_tag_final_unit();
-                inter_value = var->get_inter_value_avg_report();
-                final_value = inter_value;
-                WARN("{} NO COMP: inter value = {}, final value = {}\r\n", var->get_usr_name(), inter_value, final_value);
-                break;
-            case 1: {
-                    tag_unit = "\t" + var->get_tag_final_unit();
-                    inter_value = var->get_inter_value_avg_report();
-                    double o2_comp = var->get_o2_comp();
-                    double get_value;
-                    double o2_coeff = 1;
-                    if(app::tagmanager::instance()->get_inter_value_avg_report_by_hwname(
-                                var->get_o2_comp_hw_name(),
-                                get_value)) {
-                        double den = 20.9 - get_value;
-                        if(den != 0 && (20.9 - o2_comp) != 0) {
-                            o2_coeff = ((20.9 - o2_comp) / den);
-                        }
-                    } else {
-                        WARN("hw name not found {}\r\n", var->get_o2_comp_hw_name());
-                    }
-
-                    if(!cal_revert)
-                        final_value = inter_value * o2_coeff;
-                    else
-                        final_value = inter_value / o2_coeff;
-
-                    WARN("{} O2 COMP: inter value = {}, final value = {} o2_comp: {} \r\n", var->get_usr_name(), inter_value, final_value, o2_comp);
-                }
-                break;
-            case 2: {
-                tag_unit = "\t" + var->get_tag_final_unit();
-                inter_value = var->get_inter_value_avg_report();
-                double press_comp = var->get_press_comp();
-                double temp_comp = var->get_temp_comp();
-                double localvalue, temp_coeff = 1, press_coeff = 1;
-                if(app::tagmanager::instance()->get_inter_value_avg_report_by_hwname(
-                            var->get_press_comp_hw_name(),
-                            localvalue)) {
-                    if(localvalue != 0 && press_comp != 0)
-                        press_coeff = press_comp / localvalue;
-                }
-
-                if(app::tagmanager::instance()->get_inter_value_avg_report_by_hwname(
-                            var->get_temp_comp_hw_name(),
-                            localvalue)) {
-                    if(((273 + localvalue) != 0) && ((273 + temp_comp) != 0))
-                        temp_coeff = (273 + temp_comp) / (273 + localvalue);
-                }
-
-                if(!cal_revert)
-                    final_value = inter_value * temp_coeff * press_coeff;
-                else
-                    final_value = inter_value / (temp_coeff * press_coeff);
-
-                WARN("{} T-P COMP: inter value = {}, final value = {} t-comp: {} p-comp: {} \r\n", var->get_usr_name(),
-                     inter_value, final_value, temp_comp, press_comp);
-            }
-                break;
-            default:
-                break;
-            }
-
-            if(final_value < 0) final_value = 0;
-            if(status == "\t01" || status == "\t02") {
-                final_value = 0;
-            }
-
-            tag_value = "\t" + convert_precs(final_value, 2);
-
-            tag_name = var->get_usr_name();
-            tag_time = get_current_time_cont();
-
-
-
+            double final_value = 0, inter_value = 0;
+//            if(!avg_get_value_by_hwname(var->get_hw_name(), final_value, inter_value))
+//            {
+//                WARN("not get data from: {}\r\n", var->get_hw_name());
+//                final_value = 0;
+//            }
+            final_value = var->get_final_value();
+            LREP("final value = {}\n", final_value);
+            std::string status = var->get_status();
+            status = "\t" + status;
+            std::string tag_value = "\t" + convert_precs(final_value, 2);
+            std::string tag_name = var->get_usr_name();
+            std::string tag_time = get_current_time_cont();
+            std::string tag_unit = var->get_tag_final_unit();
             vect.push_back(tag_name);
             vect.push_back(tag_value);
             vect.push_back(tag_unit);
             vect.push_back(tag_time);
             vect.push_back(status);
-
-
-
-            //LREP("{}\t{}\t{}\r\n", tag_name, tag_value, tag_unit);
+            LREP("{}\t{}\t{}\r\n", tag_name, tag_value, tag_unit);
             logger_write_row(vect);
         } else {
         }
@@ -727,6 +547,30 @@ void Logger::save_buff_file() {
     }
 }
 
+bool Logger::avg_push_value_by_hwname(const std::string &name,
+                                      double final_value, double inter_value)
+{
+    for(auto &var : avg_list_) {
+        if(var.get_name() == name) {
+            var.push_value(final_value, inter_value);
+            return true;
+        }
+    }
+    return false;
+}
+
+bool Logger::avg_get_value_by_hwname(const std::string &name,
+                                     double &final_value, double &inter_value)
+{
+    for(auto &var : avg_list_) {
+        if(var.get_name() == name) {
+            var.get_value(final_value, inter_value);
+            return true;
+        }
+    }
+    return false;
+}
+
 std::string Logger::convert_precs(double value, int precs)
 {
     std::stringstream ss;
@@ -735,10 +579,45 @@ std::string Logger::convert_precs(double value, int precs)
     return mystring;
 }
 
+AvgValue::AvgValue(const std::string &name)  {
+    hw_name = name;
+    final_value_total = 0;
+    inter_value_total = 0;
+    final_value_avg = 0;
+    cal_time = 0;
+}
 
+void AvgValue::push_value(double final, double inter) {
+    final_value_total += final;
+    inter_value_total += inter;
+    final_value_curr = final;
+    inter_value_curr = inter;
+    cal_time += 1;
+    LREP("push final = {} inter = {} cal = {} name {}\n",
+         final_value_total, inter_value_total, cal_time , hw_name);
+}
+
+void AvgValue::get_value(double &final, double &inter) {
+    if(cal_time >= 1) {
+        final_value_avg = final_value_total / (double)cal_time;
+        inter_value_avg = inter_value_total / (double)cal_time;
+        ERR("get final = {} inter = {} cal time {} {}\n", final_value_avg,
+            inter_value_avg, cal_time, hw_name);
+        cal_time = 0;
+    } else {
+        final_value_avg = final_value_curr;
+        inter_value_avg = inter_value_curr;
+        ERR(" cal time  = 0 get final = {} inter = {} cal time {} {}\n", final_value_avg,
+            inter_value_avg, cal_time, hw_name);
+    }
+
+    final = final_value_avg;
+    inter = inter_value_avg;
+
+    final_value_total = 0;
+    inter_value_total = 0;
 }
 
 
-
-
+}
 }

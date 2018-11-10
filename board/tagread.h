@@ -9,7 +9,7 @@
 #include <vector>
 #include <configuration.h>
 
-#define COMPILE_ADAM3600        0
+#define COMPILE_ADAM3600        1
 
 
 #if COMPILE_ADAM3600 == 1
@@ -55,25 +55,22 @@ public:
     std::string   get_temp_comp_hw_name() const {return io_bind_.ai_temp;}
     std::string   get_press_comp_hw_name() const {return io_bind_.ai_press;}
 
-    double  get_inter_value_curr();
+    void    call_inter_value_curr();
+    double  get_inter_value() const {return  inter_value_;}
     double  get_raw_readed();
+
     void    set_final_value(double value);
     double  get_final_value() const {return final_value_;}
+
+    void    set_status(std::string status) {status_ =  status;}
+    std::string    get_status() const {return status_;}
+
     bool    get_raw_value();
 
     bool    get_tag_enable()    const {return io_bind_.enable;}        
 
     bool    get_tag_report()    const {return io_bind_.report;}    
     bool    get_tag_report2()    const {return io_bind_.report2;}
-
-
-    void    cal_inter_value_avg_report();
-    void    cal_inter_value_avg_stream();
-
-    double  get_inter_value_avg_report();
-
-    double  get_inter_value_avg_stream();
-
 
     std::string get_tag_pin_calib() const {return io_bind_.pin_calib;}
     std::string get_tag_pin_error() const {return io_bind_.pin_error;}
@@ -86,19 +83,13 @@ public:
 private:
     io_name_bind    io_bind_;
     DC_TAG_HANDLE   handle_;
-    DC_TAG          value_;     // raw value
-    double          inter_value_avg_;
-    double          inter_value_total_;
+    DC_TAG          value_;     // raw value    
     double          final_value_;
-    int             read_times_;
+    double          inter_value_;
+    std::string     status_;
+
     double          range_raw;
     double          range_cal;
-
-    double          inter_value_avg_stream_;
-    double          inter_value_total_stream_;
-    double          final_value_stream_;
-    int             read_times_stream_;
-
 };
 
 
@@ -116,11 +107,10 @@ public:
     void set_num_tag(int numtag);
     bool add_tag(io_name_bind config);
     bool get_inter_value_by_username(const std::string &name, double &value);
-    bool get_inter_value_avg_by_username(const std::string &name, double &value);
-    bool get_inter_value_avg_report_by_hwname(const std::string &name, double &value);
-    bool get_inter_value_avg_stream_by_hwname(const std::string &name, double &value);
+    bool get_inter_value_by_hwname(const std::string &name, double &value);
     bool get_raw_value_by_hwname(const std::string &name, double &value);
-    void scan_all_raw_inter_avg_value();
+    void scan_all_raw_inter_value();
+    void calculate_final_value();
     std::vector<std::shared_ptr<tagread>> get_tag_list() {return tag_list_;}
     std::vector<std::shared_ptr<tagread>>  tag_list_;
 

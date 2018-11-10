@@ -42,6 +42,29 @@ using namespace lib::ipc;
 namespace app {
 namespace client {
 
+class AvgValue {
+public:
+
+    AvgValue(const std::string &name);
+
+    std::string get_name() const {return hw_name;}
+
+    void push_value(double final, double inter);
+
+    void get_value(double &final, double &inter);
+
+private:
+
+    std::string hw_name;
+    double final_value_avg;
+    double inter_value_avg;
+    double final_value_total;
+    double inter_value_total;
+    double final_value_curr;
+    double inter_value_curr;
+    int cal_time;
+};
+
 class Logger : public FtpManager
 {
 
@@ -76,6 +99,11 @@ public:
     int  get_buff_size() const {return root_.size();}
     void save_buff_file();
 
+    bool avg_push_value_by_hwname(const std::string &name,
+                                  double final_value, double inter_value);
+    bool avg_get_value_by_hwname(const std::string &name,
+                                 double &final_value, double &inter_value);
+
     std::string convert_precs(double value, int precs);
 
 private:
@@ -95,6 +123,8 @@ private:
     Json::Value root_;
     int         max_num_file_;
     bool        is_master;
+
+    std::vector<AvgValue>       avg_list_;
 };
 
 

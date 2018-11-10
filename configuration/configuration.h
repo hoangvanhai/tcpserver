@@ -77,9 +77,9 @@ struct io_name_bind {
     double      coef_a;
     double      coef_b;
     double      alarm;
-    double      raw_value;
-    double      inter_value;
-    double      final_value;
+//    double      raw_value;
+//    double      inter_value;
+//    double      final_value;
 };
 
 struct user_config{    

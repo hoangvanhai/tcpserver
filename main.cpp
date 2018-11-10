@@ -95,18 +95,10 @@ int main(int argc, char *argv[])
         }
     }
 
+    app::tagmanager::instance()->calculate_final_value();
+
     LREP("tag size: {}\n", app::tagmanager::instance()->tag_list_.size());
 
-//    double value = 3.1415;
-    //std::string value_str = lib::string::format("%.2f", value);
-
-
-//    std::stringstream ss;
-//    ss << std::fixed << std::setprecision(2) << value;
-//    std::string mystring = ss.str();
-
-
-//    ERR("str = {}\r\n", mystring);
 
     std::shared_ptr<app::client::Logger> logger1 =
             std::make_shared<app::client::Logger>();
@@ -134,8 +126,8 @@ int main(int argc, char *argv[])
     std::string line;
     std::vector<std::string> vect;
     while(keep_running) {
+        app::tagmanager::instance()->calculate_final_value();
         std::this_thread::sleep_for(1_s);
-        app::tagmanager::instance()->scan_all_raw_inter_avg_value();
     }
 
 

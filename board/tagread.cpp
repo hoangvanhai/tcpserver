@@ -5,11 +5,9 @@
 namespace app {
 
 tagread::tagread(io_name_bind config)
-{
-    read_times_ = 0;
-    inter_value_total_ = 0;
-    read_times_stream_ = 0;
-    inter_value_total_stream_ = 0;
+{    
+    final_value_ = 0;
+    inter_value_ = 0;
     io_bind_ = config;
 #if COMPILE_ADAM3600 == 1
     handle_ = api_tag_open( io_bind_.hw_name.c_str(), NULL );
@@ -38,11 +36,10 @@ void tagread::tag_close()
     api_tag_close(handle_);
 }
 
-double tagread::get_inter_value_curr()
+void tagread::call_inter_value_curr()
 {
     double X = io_bind_.rang_min + (value_.value / range_raw) * range_cal ;
-    io_bind_.inter_value = io_bind_.coef_a + io_bind_.coef_b * X;
-    return io_bind_.inter_value;
+    inter_value_ = io_bind_.coef_a + io_bind_.coef_b * X;
 }
 
 void tagread::set_final_value(double value)
@@ -68,61 +65,6 @@ double tagread::get_raw_readed()
     return value_.value;
 }
 
-void tagread::cal_inter_value_avg_report()
-{
-    double inter_value = get_inter_value_curr();
-    inter_value_total_ += inter_value;
-    read_times_++;
-}
-
-void tagread::cal_inter_value_avg_stream()
-{
-    double inter_value = get_inter_value_curr();
-    inter_value_total_stream_ += inter_value;
-    read_times_stream_++;
-}
-
-
-double tagread::get_inter_value_avg_report()
-{
-    double avg = 0;
-    if(read_times_ > 0) {
-        avg = inter_value_total_ / read_times_;
-    } else {
-        avg = io_bind_.inter_value;
-    }
-    read_times_ = 0;
-    inter_value_total_ = 0;
-    return avg;
-}
-
-double tagread::get_inter_value_avg_stream()
-{
-//    double avg = 0;
-//    if(read_times_stream_ > 0) {
-//        avg = inter_value_total_stream_ / read_times_stream_;
-//    } else {
-//        avg = io_bind_.inter_value;
-//    }
-//    read_times_stream_ = 0;
-//    inter_value_total_stream_ = 0;
-//    return avg;
-    return get_inter_value_curr();
-}
-
-
-//tagmanager::tagmanager(int numtag)
-//{
-//    num_tag_ = numtag;
-//    int err;
-//    err = api_tag_init(num_tag_, 0, 0);
-//    if(err) {
-//        std::cout << "dc tag init error " << err << std::endl;
-//    } else {
-//        std::cout << "dc tag init success\n";
-//    }
-
-//}
 
 tagmanager::~tagmanager()
 {
@@ -162,47 +104,26 @@ bool tagmanager::get_inter_value_by_username(
 {
     for(auto &var : tag_list_) {
         if(var->get_usr_name() == name) {
-            value = var->get_inter_value_curr();
+            value = var->get_inter_value();
             return true;
         }
     }
     return false;
 }
 
-bool tagmanager::get_inter_value_avg_by_username(
-        const std::string &name, double &value)
-{
-    for(auto &var : tag_list_) {
-        if(var->get_usr_name() == name) {
-            value = var->get_inter_value_avg_report();
-            return true;
-        }
-    }
-    return false;
-}
 
-bool tagmanager::get_inter_value_avg_report_by_hwname(
+bool tagmanager::get_inter_value_by_hwname(
         const std::string &name, double &value)
 {
     for(auto &var : tag_list_) {
         if(var->get_hw_name() == name) {
-            value = var->get_inter_value_avg_report();
+            value = var->get_inter_value();
             return true;
         }
     }
     return false;
 }
 
-bool tagmanager::get_inter_value_avg_stream_by_hwname(const std::string &name, double &value)
-{
-    for(auto &var : tag_list_) {
-        if(var->get_hw_name() == name) {
-            value = var->get_inter_value_avg_stream();
-            return true;
-        }
-    }
-    return false;
-}
 
 bool tagmanager::get_raw_value_by_hwname(
         const std::string &name, double &value)
@@ -216,11 +137,120 @@ bool tagmanager::get_raw_value_by_hwname(
     return false;
 }
 
-void tagmanager::scan_all_raw_inter_avg_value()
+void tagmanager::scan_all_raw_inter_value()
 {
     for(auto &var : tag_list_) {
         var->get_raw_value();
-        var->cal_inter_value_avg_report();
+        var->call_inter_value_curr();
+    }
+}
+
+void tagmanager::calculate_final_value()
+{
+    scan_all_raw_inter_value();
+    for(auto &var : tag_list_) {
+    if(var->get_hw_name().find("BoardIO:AI") != std::string::npos) {
+        double value_calib, value_error;
+        double value;
+        std::string status = "";
+        if(var->has_pin_calib() && var->has_pin_error())
+        {
+            if(!app::tagmanager::instance()->get_raw_value_by_hwname(
+                        var->get_tag_pin_calib(),
+                        value)) {
+                return;
+            }
+            value_calib = value;
+            if(!app::tagmanager::instance()->get_raw_value_by_hwname(
+                        var->get_tag_pin_error(),
+                        value)) {
+                return;
+            }
+            value_error = value;
+
+
+            if(value_error > 0) {
+                status = "02";
+            } else {
+                if(value_calib > 0) {
+                    status = "01";
+                } else {
+                    status = "00";
+                }
+            }
+        }
+
+        double final_value, inter_value;
+        bool cal_revert = var->get_final_cal_revert();
+        switch(var->get_final_cal_type()) {
+        case 0:
+            inter_value = var->get_inter_value();
+            final_value = inter_value;
+            break;
+        case 1: {
+                inter_value = var->get_inter_value();
+                double o2_comp = var->get_o2_comp();
+                double get_value;
+                double o2_coeff = 1;
+                if(get_inter_value_by_hwname(
+                            var->get_o2_comp_hw_name(),
+                            get_value)) {
+                    double den = 20.9 - get_value;
+                    if(den != 0 && (20.9 - o2_comp) != 0) {
+                        o2_coeff = ((20.9 - o2_comp) / den);
+                    }
+                } else {
+                    //WARN("hw name not found {}\r\n", var->get_o2_comp_hw_name());
+                }
+
+                if(!cal_revert)
+                    final_value = inter_value * o2_coeff;
+                else
+                    final_value = inter_value / o2_coeff;
+
+                //WARN("{} O2 COMP: inter value = {}, final value = {} o2_comp: {} \r\n", var->get_usr_name(), inter_value, final_value, o2_comp);
+            }
+            break;
+        case 2: {
+            inter_value = var->get_inter_value();
+            double press_comp = var->get_press_comp();
+            double temp_comp = var->get_temp_comp();
+            double localvalue, temp_coeff = 1, press_coeff = 1;
+            if(get_inter_value_by_hwname(
+                        var->get_press_comp_hw_name(),
+                        localvalue)) {
+                if(localvalue != 0 && press_comp != 0)
+                    press_coeff = press_comp / localvalue;
+            }
+
+            if(get_inter_value_by_hwname(
+                        var->get_temp_comp_hw_name(),
+                        localvalue)) {
+                if(((273 + localvalue) != 0) && ((273 + temp_comp) != 0))
+                    temp_coeff = (273 + temp_comp) / (273 + localvalue);
+            }
+
+            if(!cal_revert)
+                final_value = inter_value * temp_coeff * press_coeff;
+            else
+                final_value = inter_value / (temp_coeff * press_coeff);
+
+            //WARN("{} T-P COMP: inter value = {}, final value = {} t-comp: {} p-comp: {} \r\n", var->get_usr_name(),
+                 //inter_value, final_value, temp_comp, press_comp);
+        }
+            break;
+        default:
+            break;
+        }
+
+        if(final_value < 0) final_value = 0;
+        if(status == "01" || status == "02") {
+            final_value = 0;
+        }
+
+        var->set_final_value(final_value);
+        var->set_status(status);
+        }
     }
 }
 
