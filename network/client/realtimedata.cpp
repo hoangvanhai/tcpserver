@@ -1,4 +1,5 @@
 #include "realtimedata.h"
+#include <cpp_lib/debug.h>
 
 namespace app {
 RealtimeData::RealtimeData()
@@ -56,8 +57,9 @@ bool RealtimeData::set_status(const std::string &hw_name, const std::string &sta
 }
 
 bool RealtimeData::set_all_value(const std::string &hw_name, double final, double inter, const std::string &status)
-{
-    for(auto &var : list_value_) {
+{    
+    std::cout << ">";
+     for(auto &var : list_value_) {
         if(var.hw_name == hw_name) {
             var.inter_value = inter;
             var.final_value = final;

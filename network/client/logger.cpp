@@ -33,7 +33,10 @@ int Logger::start(bool master)
 
     is_master = master;
 
+
+
     if(is_master) {
+        ERR("Master 1\r\n");
         FtpManager::start(config_.server.address, 21,
             config_.server.username, config_.server.passwd);
         max_num_file_ = config_.server.max_hold;
@@ -131,19 +134,24 @@ void Logger::read_tag_value()
             final_value = var->get_final_value();
             inter_value = var->get_inter_value();
 
+//            app::RealtimeData::instance()->set_all_value(
+//                    var->get_hw_name(),
+//                    final_value, inter_value, status);
+
             if(status != "01" && status != "02") {
                 avg_push_value_by_hwname(var->get_hw_name(), final_value, inter_value);
                 if(is_master) {
-                    app::RealtimeData::instance()->set_all_value(
-                            var->get_hw_name(),
-                            final_value, inter_value, status);
+//                    app::RealtimeData::instance()->set_all_value(
+//                            var->get_hw_name(),
+//                            final_value, inter_value, status);
                 }
             } else {
                 avg_push_value_by_hwname(var->get_hw_name(), 0, 0);
                 if(is_master) {
-                    app::RealtimeData::instance()->set_all_value(
-                            var->get_hw_name(),
-                            0, 0, status);
+
+//                    app::RealtimeData::instance()->set_all_value(
+//                            var->get_hw_name(),
+//                            0, 0, status);
                 }
             }
 

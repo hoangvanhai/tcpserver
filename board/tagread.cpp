@@ -1,6 +1,7 @@
 #include "tagread.h"
 #include <cpp_lib/debug.h>
 #include <cpp_lib/rand.h>
+#include <client/realtimedata.h>
 
 namespace app {
 
@@ -246,10 +247,15 @@ void tagmanager::calculate_final_value()
         if(final_value < 0) final_value = 0;
         if(status == "01" || status == "02") {
             final_value = 0;
+            inter_value = 0;
         }
 
         var->set_final_value(final_value);
         var->set_status(status);
+
+        app::RealtimeData::instance()->set_all_value(
+                var->get_hw_name(),
+                final_value, inter_value, status);
         }
     }
 }
