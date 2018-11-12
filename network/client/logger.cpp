@@ -131,16 +131,20 @@ void Logger::read_tag_value()
             final_value = var->get_final_value();
             inter_value = var->get_inter_value();
 
-            if(is_master) {
-                app::RealtimeData::instance()->set_all_value(
-                        var->get_hw_name(),
-                        final_value, inter_value, status);
-            }
-
             if(status != "01" && status != "02") {
                 avg_push_value_by_hwname(var->get_hw_name(), final_value, inter_value);
+                if(is_master) {
+                    app::RealtimeData::instance()->set_all_value(
+                            var->get_hw_name(),
+                            final_value, inter_value, status);
+                }
             } else {
-                std::cout << "not push status = " << status;
+                avg_push_value_by_hwname(var->get_hw_name(), 0, 0);
+                if(is_master) {
+                    app::RealtimeData::instance()->set_all_value(
+                            var->get_hw_name(),
+                            0, 0, status);
+                }
             }
 
         } else {
