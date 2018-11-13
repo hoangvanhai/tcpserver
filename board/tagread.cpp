@@ -227,8 +227,12 @@ void tagmanager::calculate_final_value()
             if(get_inter_value_by_hwname(
                         var->get_temp_comp_hw_name(),
                         localvalue)) {
+
+//                if(((273 + localvalue) != 0) && ((273 + temp_comp) != 0))
+//                    temp_coeff = (273 + temp_comp) / (273 + localvalue);
+
                 if(((273 + localvalue) != 0) && ((273 + temp_comp) != 0))
-                    temp_coeff = (273 + temp_comp) / (273 + localvalue);
+                    temp_coeff = (273 + localvalue) / (273 + temp_comp);
             }
 
             if(!cal_revert)
