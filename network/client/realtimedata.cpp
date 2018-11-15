@@ -14,10 +14,10 @@ void RealtimeData::add_point_value(const app::io_name_bind &tag) {
     point.sw_name = tag.user_name;
     point.inter_unit = tag.inter_unit;
     point.final_unit = tag.final_unit;
-    point.alarm = tag.alarm;
+    point.alarm = tag.coef_a + (tag.coef_b * tag.alarm);
     point.alarm_enable = tag.alarm_enable;
-    point.min = tag.rang_min;
-    point.max = tag.rang_max;
+    point.min = tag.coef_a + (tag.coef_b * tag.rang_min);
+    point.max = tag.coef_a + (tag.coef_b * tag.rang_max);
     point.final_value = 0;
     point.inter_value = 0;
     list_value_.push_back(point);
