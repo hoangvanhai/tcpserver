@@ -154,32 +154,38 @@ void tagmanager::calculate_final_value()
         double value_calib, value_error;
         double value;
         std::string status = "";
-        if(var->has_pin_calib() && var->has_pin_error())
+
+        if(var->has_pin_calib() || var->has_pin_error()) {
+            status = "00";
+        }
+
+        if(var->has_pin_calib())
         {
             if(!app::tagmanager::instance()->get_raw_value_by_hwname(
                         var->get_tag_pin_calib(),
                         value)) {
                 return;
             }
-            value_calib = value;
+            value_calib = value;           
+            if(value_calib > 0) {
+                status = "01";
+            }
+        }
+
+        if(var->has_pin_error()) {
             if(!app::tagmanager::instance()->get_raw_value_by_hwname(
                         var->get_tag_pin_error(),
                         value)) {
                 return;
             }
+
             value_error = value;
-
-
             if(value_error > 0) {
                 status = "02";
-            } else {
-                if(value_calib > 0) {
-                    status = "01";
-                } else {
-                    status = "00";
-                }
             }
         }
+
+
 
         double final_value, inter_value;
         bool cal_revert = var->get_final_cal_revert();
