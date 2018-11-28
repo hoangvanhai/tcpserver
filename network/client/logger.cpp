@@ -179,8 +179,8 @@ void Logger::read_save_tag_value() {
                 final_value = 0;
             }
             std::string status = var->get_status();
-            status = "\t" + status;
-            std::string tag_value = "\t" + convert_precs(final_value, 2);
+            status = status;
+            std::string tag_value = convert_precs(final_value, 2);
             std::string tag_name = var->get_usr_name();
             std::string tag_time = get_current_time_cont();
             std::string tag_unit = var->get_tag_final_unit();
@@ -240,13 +240,13 @@ Logger::FileDesc Logger::logger_create_logfile()
 
     logger_create_file(file.local_file_path + filename);
 
-    std::vector<std::string> header;
-    header.push_back("Thông số");
-    header.push_back("Giá trị\t");
-    header.push_back("Đơn vị");
-    header.push_back("Thời gian\t");
-    header.push_back("Trạng thái TB");
-    logger_write_row(header);    
+//    std::vector<std::string> header;
+//    header.push_back("Thông số");
+//    header.push_back("Giá trị\t");
+//    header.push_back("Đơn vị");
+//    header.push_back("Thời gian\t");
+//    header.push_back("Trạng thái TB");
+//    logger_write_row(header);
     file.file_name = filename;
 
     LREP("create new file: {}\n", file.local_file_path + filename);

@@ -188,7 +188,7 @@ int FtpManager::remote_mkd_recursive(const std::string &path)
     if(err == FTP_ERR_NONE) {
         err = remote_cwd(folder, msg);
         if(err == FTP_ERR_NONE &&
-                msg.find("command successful") != std::string::npos){
+                msg.find("successful") != std::string::npos){
             err = FTP_ERR_NONE;
         } else {
             err = FTP_ERR_CD;
