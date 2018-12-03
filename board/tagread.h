@@ -9,7 +9,7 @@
 #include <vector>
 #include <configuration.h>
 
-#define COMPILE_ADAM3600        1
+#define COMPILE_ADAM3600        0
 
 
 #if COMPILE_ADAM3600 == 1

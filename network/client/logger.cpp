@@ -38,12 +38,12 @@ int Logger::start(bool master)
     if(is_master) {
         ERR("Master 1\r\n");
         FtpManager::start(config_.server.address, 21,
-            config_.server.username, config_.server.passwd);
+            config_.server.username, config_.server.passwd, config_.server.prefix_path);
         max_num_file_ = config_.server.max_hold;
         local_folder_path_ = config_.server.data_path;
     } else {
         FtpManager::start(config_.server2.address, 21,
-            config_.server2.username, config_.server2.passwd);
+            config_.server2.username, config_.server2.passwd, config_.server2.prefix_path);
         max_num_file_ = config_.server2.max_hold;
         local_folder_path_ = config_.server2.data_path;
     }

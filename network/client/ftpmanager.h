@@ -23,7 +23,7 @@ public:
     ~FtpManager();
 
     int start(const std::string &iaddress, int iport,
-              const std::string &usrname, const std::string &passwd);
+              const std::string &usrname, const std::string &passwd, const std::string &prefix_path);
     int stop();
 
     int setup_channel();    
@@ -45,6 +45,7 @@ private:
     std::string username_;
     std::string passwd_;
     std::string ipaddr_;
+    std::string prefix_path_;
     int port_;
 
     typedef int (FtpManager::*FPTR)();

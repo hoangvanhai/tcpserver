@@ -80,7 +80,7 @@ bool userconfig::load_config()
 {
 
     {
-        ftp_server_info def = {true, "/opt/data/ftp1/", "127.0.0.1", "FTP-User", "123456a@", 21,  1000, 5, 100000};
+        ftp_server_info def = {true, "", "/opt/data/ftp1/", "127.0.0.1", "FTP-User", "123456a@", 21,  1000, 5, 100000};
         load_ftp_server_config(config_.server, def);
         LREP("ftp_server: address: {}, port: {}, username: {}, passwd: {}, scan: {}, log: {} max_hold: {}\n",
              config_.server.address, config_.server.port, config_.server.username, config_.server.passwd,
@@ -88,7 +88,7 @@ bool userconfig::load_config()
     }
 
     {
-        ftp_server_info def = {true, "/opt/data/ftp2/", "127.0.0.1", "FTP-User", "123456a@", 21,  1000, 5, 100000};
+        ftp_server_info def = {true, "", "/opt/data/ftp2/", "127.0.0.1", "FTP-User", "123456a@", 21,  1000, 5, 100000};
         load_ftp_server_config(config_.server2, def, 2);
         LREP("ftp_server: address: {}, port: {}, username: {}, passwd: {}, scan: {}, log: {} max_hold: {}\n",
              config_.server2.address, config_.server2.port, config_.server2.username, config_.server2.passwd,
@@ -342,6 +342,7 @@ void userconfig::load_ftp_server_config(ftp_server_info &server, ftp_server_info
 
     if(retVal) {
         server.enable   = value["enable"].asBool();
+        server.prefix_path = value["prefix_path"].asString();
         server.data_path = value["data_path"].asString();
         server.address  = value["address"].asString();        
         server.port     = value["port"].asInt();
@@ -352,6 +353,7 @@ void userconfig::load_ftp_server_config(ftp_server_info &server, ftp_server_info
         server.max_hold = value["max_hold"].asInt();
     } else {
         value["enable"]     = def_val.enable;
+        value["prefix_path"] = def_val.prefix_path;
         value["data_path"] = def_val.data_path;
         value["address"]    = def_val.address;
         value["port"]       = def_val.port;
@@ -371,6 +373,7 @@ void userconfig::save_ftp_server_config(const ftp_server_info &server, int idx)
     Json::Value value;
     try_get_object(root_, "ftp_server" + std::to_string(idx), value);
     value["enable"]     = server.enable;
+    value["prefix_path"]  = server.prefix_path;
     value["data_path"]  = server.data_path;
     value["address"]    = server.address;
     value["port"]       = server.port;

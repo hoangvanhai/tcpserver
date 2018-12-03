@@ -205,12 +205,14 @@ void TcpClient::process_raw_data(const void *data, int len)
             user_config cfg = app::userconfig::instance()->get_user_config();
             cfg.server.enable  = smsg["enable"].asBool();
             cfg.server.address = smsg["serverip"].asString();
+            cfg.server.prefix_path = smsg["prefix"].asString();
             cfg.server.passwd = smsg["password"].asString();
             cfg.server.username = smsg["username"].asString();
             cfg.server.log_dur = smsg["logdur"].asDouble();
 
             cfg.server2.enable  = smsg["enable2"].asBool();
             cfg.server2.address = smsg["serverip2"].asString();
+            cfg.server2.prefix_path = smsg["prefix2"].asString();
             cfg.server2.passwd = smsg["password2"].asString();
             cfg.server2.username = smsg["username2"].asString();
             cfg.server2.log_dur = smsg["logdur2"].asDouble();
@@ -643,6 +645,7 @@ void TcpClient::send_system_info()
     sysinfo["tram"] = config.filename.tentram;
 
     sysinfo["enable"] = config.server.enable;
+    sysinfo["prefix"] = config.server.enable;
     sysinfo["serverip"] = config.server.address;
     sysinfo["port"] = config.server.port;
     sysinfo["username"] = config.server.username;
@@ -650,6 +653,7 @@ void TcpClient::send_system_info()
     sysinfo["logdur"] = config.server.log_dur;
 
     sysinfo["enable2"] = config.server2.enable;
+    sysinfo["prefix2"] = config.server2.enable;
     sysinfo["serverip2"] = config.server2.address;
     sysinfo["port2"] = config.server2.port;
     sysinfo["username2"] = config.server2.username;

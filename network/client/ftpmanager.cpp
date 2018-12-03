@@ -15,12 +15,24 @@ FtpManager::~FtpManager()
 }
 
 int FtpManager::start(const std::string &iaddress, int iport,
-                      const std::string &usrname, const std::string &passwd)
+                      const std::string &usrname, const std::string &passwd, const std::string &prefix_path)
 {
     ipaddr_ = iaddress;
     port_ = iport;
     username_ = usrname;
     passwd_ = passwd;
+    prefix_path_ = prefix_path;
+
+    if(prefix_path_ != "") {
+        if(!lib::string::end_with(prefix_path_, '/')) {
+            prefix_path_ += "/";
+        }
+
+        if(prefix_path_.at(0) == '/') {
+            prefix_path_ = std::string(&(prefix_path_.c_str()[1]));
+        }
+    }
+
     LREP("ip: {}:{} account: {}:{}\n", ipaddr_, port_, username_, passwd_);
     return 0;
 }
@@ -229,6 +241,7 @@ int FtpManager::remote_put(const std::string &file_name,
         }
     }
 
+    std::string remote_path_make = prefix_path_ + remote_path;
     err = remote_cwd("/", msg);
 
     if(err != FTP_ERR_NONE) {
@@ -237,7 +250,7 @@ int FtpManager::remote_put(const std::string &file_name,
     }
 
     // create directory recursive on server
-    err = remote_mkd_recursive(remote_path);
+    err = remote_mkd_recursive(remote_path_make);
     if(err == FTP_ERR_NONE) {
 
         if(get_data_sock_status() != STATUS_CONNECTED) {
@@ -308,7 +321,7 @@ int FtpManager::remote_put(const std::string &file_name,
         if(recv_ctrl_msg(msg, 100))
             WARN("{}", msg);
     } else {
-        ERR("cd to on remote: {} failed disconnect all\n", remote_path);
+        ERR("cd to on remote: {} failed disconnect all\n", remote_path_make);
         TcpClientSock::stop();
     }
 
