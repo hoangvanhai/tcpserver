@@ -645,7 +645,7 @@ void TcpClient::send_system_info()
     sysinfo["tram"] = config.filename.tentram;
 
     sysinfo["enable"] = config.server.enable;
-    sysinfo["prefix"] = config.server.enable;
+    sysinfo["prefix"] = config.server.prefix_path;
     sysinfo["serverip"] = config.server.address;
     sysinfo["port"] = config.server.port;
     sysinfo["username"] = config.server.username;
@@ -653,7 +653,7 @@ void TcpClient::send_system_info()
     sysinfo["logdur"] = config.server.log_dur;
 
     sysinfo["enable2"] = config.server2.enable;
-    sysinfo["prefix2"] = config.server2.enable;
+    sysinfo["prefix2"] = config.server2.prefix_path;
     sysinfo["serverip2"] = config.server2.address;
     sysinfo["port2"] = config.server2.port;
     sysinfo["username2"] = config.server2.username;
