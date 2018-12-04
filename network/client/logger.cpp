@@ -48,6 +48,7 @@ int Logger::start(bool master)
         local_folder_path_ = config_.server2.data_path;
     }
 
+    dir_man_.set_param(local_folder_path_, 1);
 
     for(int i = 0; i < APP_SYSTEM_MAX_TAG; i++) {
         // Only add AI point
@@ -302,7 +303,7 @@ void Logger::thread_function()
         int log_min = (config_.server.log_dur) >= 1 ? (config_.server.log_dur) : 1;
         int last_min = 0;
         bool logged = false;
-        while(listen_run_) {
+        while(listen_run_) {            
             std::this_thread::sleep_for(1_s);
             std::cout << "#"; fflush(stdout);
 
@@ -324,6 +325,7 @@ void Logger::thread_function()
                 mutex_.unlock();
                 last_min = time_now_->tm_min;
                 logged = true;
+                dir_man_.do_manager();
             }
         }
     } else {
@@ -332,6 +334,7 @@ void Logger::thread_function()
         bool logged = false;
         Log_Sm sm = Log_Wait_Log_0;
         while(listen_run_) {
+
             std::this_thread::sleep_for(1_s);
             std::cout << "#"; fflush(stdout);
 
@@ -351,6 +354,7 @@ void Logger::thread_function()
                     mutex_.unlock();
                     last_min = time_now_->tm_min;
                     logged = true;
+                    dir_man_.do_manager();
                 }
             } else {
 
@@ -626,6 +630,8 @@ void AvgValue::get_value(double &final, double &inter) {
     final_value_total = 0;
     inter_value_total = 0;
 }
+
+
 
 
 }

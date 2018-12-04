@@ -65,6 +65,58 @@ private:
     int cal_time;
 };
 
+
+class DirMan {
+public:
+
+    DirMan()
+    {
+
+    }
+
+    DirMan(const std::string &path, int num_mon)
+    {
+        root_dir_ = path;
+        num_dir_ = num_mon;
+        root_path_ = lib::filesystem::path(path);
+    }
+
+    void set_param(const std::string &path, int num_mon) {
+        root_dir_ = path;
+        num_dir_ = num_mon;
+        root_path_ = lib::filesystem::path(path);
+    }
+
+    void do_manager() {
+        int num_entr = 0;
+        for (const auto &item : lib::filesystem::directory_iterator(root_path_)) {
+            (void)item;
+            num_entr++;
+        }
+
+
+        if(num_entr > num_dir_) {
+            int num_remove = num_entr - num_dir_;
+            int iter = 0;
+            for (const auto &item : lib::filesystem::directory_iterator(root_path_)) {
+                if(iter < num_remove) {
+                    std::string remove_folder = item.path().string();
+                    std::string rm = "rm -r " + remove_folder;
+                    WARN("remove {}", remove_folder);
+                    system(rm.c_str());
+                }
+                iter++;
+            }
+        }
+    }
+
+private:
+    std::string root_dir_;
+    int         num_dir_;
+    lib::filesystem::path root_path_;
+
+};
+
 class Logger : public FtpManager
 {
 
@@ -125,7 +177,10 @@ private:
     bool        is_master;
 
     std::vector<std::shared_ptr<AvgValue>>       avg_list_;
+
+    DirMan      dir_man_;
 };
+
 
 
 
