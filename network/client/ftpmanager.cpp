@@ -312,7 +312,8 @@ int FtpManager::remote_put(const std::string &file_name,
             {
                 ERR("Send data msg failed");
                 TcpClientSock::stop();
-                return FTP_ERR_PUT;
+                //return FTP_ERR_PUT;
+                break;
             }
         }
 
