@@ -202,6 +202,8 @@ void TcpClient::process_raw_data(const void *data, int len)
             smsg = value["data"];
             //std::string ipaddress, netmask;
 
+            //std::cout << smsg << std::endl;
+
             user_config cfg = app::userconfig::instance()->get_user_config();
             cfg.server.enable  = smsg["enable"].asBool();
             cfg.server.address = smsg["serverip"].asString();
@@ -217,12 +219,11 @@ void TcpClient::process_raw_data(const void *data, int len)
             cfg.server2.username = smsg["username2"].asString();
             cfg.server2.log_dur = smsg["logdur2"].asDouble();
 
-
-
-
+            cfg.filename.ntram   = smsg["ntram"].asInt();
             cfg.filename.tentinh = smsg["tinh"].asString();
             cfg.filename.tencoso = smsg["coso"].asString();
             cfg.filename.tentram = smsg["tram"].asString();
+            cfg.filename.tentram2 = smsg["tram2"].asString();
 
 //            set_network(false, ipaddress, netmask);
 
@@ -251,6 +252,7 @@ void TcpClient::process_raw_data(const void *data, int len)
                 cfg.tag[tag + 12].cal_revert = smsg["cal_revert"].asBool();
                 cfg.tag[tag + 12].alarm_enable = smsg["alarm_en"].asBool();
                 cfg.tag[tag + 12].user_name = smsg["sw"].asString();
+                cfg.tag[tag + 12].tram = smsg["tram"].asInt();
                 cfg.tag[tag + 12].final_unit = smsg["final_unit"].asString();
                 cfg.tag[tag + 12].inter_unit = smsg["inter_unit"].asString();
                 cfg.tag[tag + 12].pin_calib = "BoardIO:DI." + smsg["calib"].asString();
@@ -275,6 +277,7 @@ void TcpClient::process_raw_data(const void *data, int len)
                 cfg.tag[tag + 12].ai_o2 = "BoardIO:AI." + smsg["ai_o2"].asString();
                 cfg.tag[tag + 12].ai_temp = "BoardIO:AI." + smsg["ai_temp"].asString();
                 cfg.tag[tag + 12].ai_press = "BoardIO:AI." + smsg["ai_press"].asString();
+
 
 
                 app::userconfig::instance()->save_user_config(cfg);
@@ -585,6 +588,8 @@ void TcpClient::send_tag_info(int tag)
 
     value["report"] = config.tag[tag + 12].report;
     value["report2"] = config.tag[tag + 12].report2;
+    value["tram"] = config.tag[tag + 12].tram;
+    value["ntram"] = config.filename.ntram;
     value["sw"] = config.tag[tag + 12].user_name;
     value["inter_unit"] = config.tag[tag + 12].inter_unit;
     value["final_unit"] = config.tag[tag + 12].final_unit;
@@ -624,7 +629,7 @@ void TcpClient::send_tag_info(int tag)
 
     root["data"] = value;
 
-    std::cout << root << std::endl;
+    //std::cout << root << std::endl;
     Json::FastWriter fast_writer;
     std::string msg = fast_writer.write(root);
     send_data(msg.c_str(), (int)msg.size());
@@ -640,9 +645,11 @@ void TcpClient::send_system_info()
     root["subtype"] = "get_system_info";
     sysinfo["ipaddress"] = myip;
     sysinfo["netmask"] = netmask;
+    sysinfo["ntram"] = config.filename.ntram;
     sysinfo["tinh"] = config.filename.tentinh;
     sysinfo["coso"] = config.filename.tencoso;
     sysinfo["tram"] = config.filename.tentram;
+    sysinfo["tram2"] = config.filename.tentram2;
 
     sysinfo["enable"] = config.server.enable;
     sysinfo["prefix"] = config.server.prefix_path;
@@ -662,6 +669,7 @@ void TcpClient::send_system_info()
 
     root["data"] = sysinfo;
 
+    //std::cout << root << std::endl;
     Json::FastWriter fast_writer;
     std::string msg = fast_writer.write(root);
     send_data(msg.c_str(), (int)msg.size());

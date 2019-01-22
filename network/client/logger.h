@@ -133,7 +133,7 @@ public:
     void read_save_tag_value();
     void read_tag_value();
     void logger_create_file(const std::string &name);
-    FileDesc logger_create_logfile();
+    FileDesc logger_create_logfile(int idx);
     void logger_write_row(const std::vector<std::string> row);
     void logger_write_row(const std::string &x,
                           const std::string &y,

@@ -96,7 +96,7 @@ bool userconfig::load_config()
     }
 
     {
-        ftp_file_name def = {"AG", "SGCE", "KHI"};
+        ftp_file_name def = {1, "AG", "SGCE", "KHI1", "KHI2"};
         load_ftp_filename_config(config_.filename, def);
         LREP("ftp_filename: tentinh: {}, tencoso: {}, tentram: {}\n",
              config_.filename.tentinh, config_.filename.tencoso,
@@ -226,6 +226,7 @@ void userconfig::load_tag_config(const std::string &type, io_name_bind &tag, io_
         tag.report2          = value["report2"].asBool();
         tag.cal_revert      = value["cal_revert"].asBool();
         tag.alarm_enable    = value["alarm_en"].asBool();
+        tag.tram            = value["tram"].asInt();
         tag.final_type      = StdCondType(value["final_type"].asInt());
         tag.tag_desc        = value["tag_desc"].asString();
         tag.hw_name         = value["hw_name"].asString();
@@ -259,6 +260,7 @@ void userconfig::load_tag_config(const std::string &type, io_name_bind &tag, io_
         value["report2"]     = def_val.report2;
         value["cal_revert"] = def_val.cal_revert;
         value["alarm_en"]   = def_val.alarm_enable;
+        value["tram"]       = def_val.tram;
         value["final_type"] = def_val.final_type;
         value["tag_desc"]   = def_val.tag_desc;
         value["hw_name"]    = def_val.hw_name;
@@ -302,6 +304,7 @@ void userconfig::save_tag_config(const std::string &type, io_name_bind tag)
     value["report2"]    = tag.report2;
     value["cal_revert"] = tag.cal_revert;
     value["alarm_en"]   = tag.alarm_enable;
+    value["tram"]       = tag.tram;
     value["final_type"] = tag.final_type;
     value["tag_desc"]   = tag.tag_desc;
     value["hw_name"]    = tag.hw_name;
@@ -351,6 +354,7 @@ void userconfig::load_ftp_server_config(ftp_server_info &server, ftp_server_info
         server.scan_dur = value["scan_dur"].asInt();
         server.log_dur  = value["log_dur"].asDouble();
         server.max_hold = value["max_hold"].asInt();
+
     } else {
         value["enable"]     = def_val.enable;
         value["prefix_path"] = def_val.prefix_path;
@@ -361,7 +365,7 @@ void userconfig::load_ftp_server_config(ftp_server_info &server, ftp_server_info
         value["passwd"]     = def_val.passwd;
         value["scan_dur"]   = def_val.scan_dur;
         value["log_dur"]    = def_val.log_dur;
-        value["max_hold"]   = def_val.max_hold;
+        value["max_hold"]   = def_val.max_hold;        
         server              = def_val;
         root_["ftp_server" + std::to_string(idx)] = value;
         is_save_ = true;
@@ -394,10 +398,14 @@ void userconfig::load_ftp_filename_config(ftp_file_name &filename,
         filename.tentinh  = value["ten_tinh"].asString();
         filename.tencoso  = value["ten_coso"].asString();
         filename.tentram  = value["ten_tram"].asString();
+        filename.tentram2 = value["ten_tram2"].asString();
+        filename.ntram    = value["ntram"].asInt();
     } else {
+        value["ntram"]     = def_val.ntram;
         value["ten_tinh"]  = def_val.tentinh;
         value["ten_coso"]  = def_val.tencoso;
         value["ten_tram"]  = def_val.tentram;
+        value["ten_tram2"]  = def_val.tentram2;
         filename           = def_val;
         root_["file_name"] = value;
         is_save_ = true;
@@ -408,9 +416,11 @@ void userconfig::save_ftp_filename_config(const ftp_file_name &filename)
 {
     Json::Value value;
     try_get_object(root_, "file_name", value);
+    value["ntram"]       = filename.ntram;
     value["ten_tinh"]    = filename.tentinh;
     value["ten_coso"]    = filename.tencoso;
     value["ten_tram"]    = filename.tentram;
+    value["ten_tram2"]   = filename.tentram2;
     root_["file_name"]   = value;
     std::cout << value;
     is_save_ = true;

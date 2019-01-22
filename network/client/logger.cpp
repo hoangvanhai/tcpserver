@@ -38,9 +38,14 @@ int Logger::start(bool master)
     if(is_master) {
         ERR("Master 1\r\n");
         FtpManager::start(config_.server.address, 21,
-            config_.server.username, config_.server.passwd, config_.server.prefix_path);
+            config_.server.username,
+                          config_.server.passwd,
+                          config_.server.prefix_path);
+
         max_num_file_ = config_.server.max_hold;
+
         local_folder_path_ = config_.server.data_path;
+
     } else {
         FtpManager::start(config_.server2.address, 21,
             config_.server2.username, config_.server2.passwd, config_.server2.prefix_path);
@@ -207,18 +212,39 @@ void Logger::logger_create_file(const std::string &name) {
     }
 }
 
-Logger::FileDesc Logger::logger_create_logfile()
+Logger::FileDesc Logger::logger_create_logfile(int idx)
 {
     FileDesc file;
     std::string year, month, day;
     char temp[30];
     app::user_config cfg = app::userconfig::instance()->get_user_config();
     //logger_close();
-    std::string time = get_current_time_cont();    
-    std::string filename = cfg.filename.tentinh + "_" +
-            cfg.filename.tencoso + "_" +
-            cfg.filename.tentram + "_" +
-            time +".txt";
+    std::string time = get_current_time_cont();
+
+    std::string filename;
+
+    if(cfg.filename.ntram > 1) {
+        ERR("two station master = {} idx = {}\r\n", is_master, idx);
+        if(idx == 1) {
+        filename = cfg.filename.tentinh + "_" +
+               cfg.filename.tencoso + "_" +
+               cfg.filename.tentram + "_" +
+               time +".txt";
+        } else {
+            filename = cfg.filename.tentinh + "_" +
+                   cfg.filename.tencoso + "_" +
+                   cfg.filename.tentram2 + "_" +
+                   time +".txt";
+        }
+    } else {
+        ERR("one station master = {}\r\n", is_master);
+        filename = cfg.filename.tentinh + "_" +
+               cfg.filename.tencoso + "_" +
+               cfg.filename.tentram + "_" +
+               time +".txt";
+    }
+
+
 
 
     year = lib::convert::to_string<int>(time_now_->tm_year + 1900) + "/";
@@ -241,16 +267,75 @@ Logger::FileDesc Logger::logger_create_logfile()
 
     logger_create_file(file.local_file_path + filename);
 
-//    std::vector<std::string> header;
-//    header.push_back("Thông số");
-//    header.push_back("Giá trị\t");
-//    header.push_back("Đơn vị");
-//    header.push_back("Thời gian\t");
-//    header.push_back("Trạng thái TB");
-//    logger_write_row(header);
     file.file_name = filename;
 
     LREP("create new file: {}\n", file.local_file_path + filename);
+
+    if(cfg.filename.ntram > 1) {
+        for(auto &var : app::tagmanager::instance()->tag_list_) {
+            bool tag_report;
+            if(is_master)
+                tag_report = (var->get_tag_report() && (var->get_tag_tram_idx() == idx));
+            else
+                tag_report = (var->get_tag_report2() && (var->get_tag_tram_idx() == idx));
+
+            if(var->get_hw_name().find("BoardIO:AI") != std::string::npos && tag_report) {
+                std::vector<std::string> vect;
+                double final_value = 0, inter_value = 0;
+                if(!avg_get_value_by_hwname(var->get_hw_name(), final_value, inter_value))
+                {
+                    WARN("not get data from: {}\r\n", var->get_hw_name());
+                    final_value = 0;
+                }
+                std::string status = var->get_status();
+                status = status;
+                std::string tag_value = convert_precs(final_value, 2);
+                std::string tag_name = var->get_usr_name();
+                std::string tag_time = get_current_time_cont();
+                std::string tag_unit = var->get_tag_final_unit();
+                vect.push_back(tag_name);
+                vect.push_back(tag_value);
+                vect.push_back(tag_unit);
+                vect.push_back(tag_time);
+                vect.push_back(status);
+                LREP("{}\t{}\t{}\r\n", tag_name, tag_value, tag_unit);
+                logger_write_row(vect);
+            } else {
+            }
+        }
+    } else {
+        for(auto &var : app::tagmanager::instance()->tag_list_) {
+            bool tag_report;
+            if(is_master)
+                tag_report = var->get_tag_report();
+            else
+                tag_report = var->get_tag_report2();
+
+            if(var->get_hw_name().find("BoardIO:AI") != std::string::npos && tag_report) {
+                std::vector<std::string> vect;
+                double final_value = 0, inter_value = 0;
+                if(!avg_get_value_by_hwname(var->get_hw_name(), final_value, inter_value))
+                {
+                    WARN("not get data from: {}\r\n", var->get_hw_name());
+                    final_value = 0;
+                }
+                std::string status = var->get_status();
+                status = status;
+                std::string tag_value = convert_precs(final_value, 2);
+                std::string tag_name = var->get_usr_name();
+                std::string tag_time = get_current_time_cont();
+                std::string tag_unit = var->get_tag_final_unit();
+                vect.push_back(tag_name);
+                vect.push_back(tag_value);
+                vect.push_back(tag_unit);
+                vect.push_back(tag_time);
+                vect.push_back(status);
+                LREP("{}\t{}\t{}\r\n", tag_name, tag_value, tag_unit);
+                logger_write_row(vect);
+            } else {
+            }
+        }
+    }
 
     return file;
 }
@@ -318,11 +403,22 @@ void Logger::thread_function()
             }
 
             if(logged == false && (time_now_->tm_min) % log_min == 0) {
-                FileDesc file = logger_create_logfile();
-                read_save_tag_value();
-                mutex_.lock();
-                add_buff_point(file);
-                mutex_.unlock();
+                if(config_.filename.ntram > 1) {
+                    FileDesc file = logger_create_logfile(1);
+                    mutex_.lock();
+                    add_buff_point(file);
+                    mutex_.unlock();
+
+                    file = logger_create_logfile(2);
+                    mutex_.lock();
+                    add_buff_point(file);
+                    mutex_.unlock();
+                } else {
+                    FileDesc file = logger_create_logfile(0);
+                    mutex_.lock();
+                    add_buff_point(file);
+                    mutex_.unlock();
+                }
                 last_min = time_now_->tm_min;
                 logged = true;
                 dir_man_.do_manager();
@@ -347,11 +443,22 @@ void Logger::thread_function()
                 }
 
                 if(logged == false && (time_now_->tm_min) % log_min == 0) {
-                    FileDesc file = logger_create_logfile();
-                    read_save_tag_value();
-                    mutex_.lock();
-                    add_buff_point(file);
-                    mutex_.unlock();
+                    if(config_.filename.ntram > 1) {
+                        FileDesc file = logger_create_logfile(1);
+                        mutex_.lock();
+                        add_buff_point(file);
+                        mutex_.unlock();
+
+                        file = logger_create_logfile(2);
+                        mutex_.lock();
+                        add_buff_point(file);
+                        mutex_.unlock();
+                    } else {
+                        FileDesc file = logger_create_logfile(0);
+                        mutex_.lock();
+                        add_buff_point(file);
+                        mutex_.unlock();
+                    }
                     last_min = time_now_->tm_min;
                     logged = true;
                     dir_man_.do_manager();
@@ -376,11 +483,22 @@ void Logger::thread_function()
                 }
 
                 if(logged == false) {
-                    FileDesc file = logger_create_logfile();
-                    read_save_tag_value();
-                    mutex_.lock();
-                    add_buff_point(file);
-                    mutex_.unlock();
+                    if(config_.filename.ntram > 1) {
+                        FileDesc file = logger_create_logfile(1);
+                        mutex_.lock();
+                        add_buff_point(file);
+                        mutex_.unlock();
+
+                        file = logger_create_logfile(2);
+                        mutex_.lock();
+                        add_buff_point(file);
+                        mutex_.unlock();
+                    } else {
+                        FileDesc file = logger_create_logfile(0);
+                        mutex_.lock();
+                        add_buff_point(file);
+                        mutex_.unlock();
+                    }
                     logged = true;
                 }
 

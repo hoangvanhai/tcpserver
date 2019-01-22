@@ -31,9 +31,11 @@ struct ftp_server_info {
 };
 
 struct ftp_file_name {
+    int         ntram;
     std::string tentinh;
     std::string tencoso;
     std::string tentram;
+    std::string tentram2;
 };
 
 enum StdCondType {
@@ -48,6 +50,7 @@ struct io_name_bind {
     bool        report2;
     bool        cal_revert;
     bool        alarm_enable;
+    int         tram;
     StdCondType final_type;
 
     std::string tag_desc;

@@ -9,7 +9,7 @@
 #include <vector>
 #include <configuration.h>
 
-#define COMPILE_ADAM3600        1
+#define COMPILE_ADAM3600        0
 
 
 #if COMPILE_ADAM3600 == 1
@@ -71,6 +71,8 @@ public:
 
     bool    get_tag_report()    const {return io_bind_.report;}    
     bool    get_tag_report2()    const {return io_bind_.report2;}
+
+    int     get_tag_tram_idx()  const {return io_bind_.tram;}
 
     std::string get_tag_pin_calib() const {return io_bind_.pin_calib;}
     std::string get_tag_pin_error() const {return io_bind_.pin_error;}
