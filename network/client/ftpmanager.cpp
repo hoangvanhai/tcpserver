@@ -183,9 +183,16 @@ int FtpManager::remote_raw_cmd(const std::string &cmd)
 
 int FtpManager::remote_mkd_recursive(const std::string &path)
 {
-    std::string folder, msg;
-    folder.clear();    
     int err = FTP_ERR_CD;
+    std::string folder, msg;
+    err = remote_cwd(path, msg);
+    if(err == FTP_ERR_NONE &&
+            msg.find("successful") != std::string::npos){
+        err = FTP_ERR_NONE;
+        return err;
+    }
+
+    folder.clear();    
     std::vector<std::string> vect;
     lib::string::split(path, "/", vect);
     for(size_t i = 0; i < vect.size(); i++) {
